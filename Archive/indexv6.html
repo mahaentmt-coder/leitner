@@ -198,13 +198,6 @@
   .add-word-details summary:hover { color:var(--text1); }
   .add-word-details[open] summary { color:var(--text0); }
   .add-word-inner { background:var(--card);border:0.5px solid var(--border0);border-radius:16px;padding:1.25rem;box-shadow:var(--shadow); }
-
-  /* ── Example sentence on flashcard ── */
-  .fc-sentence { width:100%;margin-top:4px;padding:10px 14px;background:var(--bg1);border-radius:10px;text-align:left;border:0.5px solid var(--border0); }
-  .fc-sent-loading { font-size:12px;color:var(--text2);font-style:italic; }
-  .fc-sent-error { font-size:11px;color:var(--danger); }
-  .fc-sent-sentence { font-size:14px;color:var(--text0);font-style:italic;margin-bottom:4px;line-height:1.5; }
-  .fc-sent-translation { font-size:12px;color:var(--text2); }
 </style>
 </head>
 <body>
@@ -227,7 +220,6 @@
 </div>
 
 <script>
-const ANTHROPIC_KEY='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'; // ← replace with your key from console.anthropic.com
 const SUPABASE_URL='https://sudbjoqhzbtfttxqqbej.supabase.co';
 const SUPABASE_KEY='sb_publishable_SrRhyTEzPJd7dwfl9PU_sQ_DAKhkknT';
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -320,43 +312,6 @@ function computeNextReview(currentSection, correct){
   const interval = BOX_INTERVALS[Math.min(box-1, BOX_INTERVALS.length-1)];
   const next = isDone ? null : addDays(today(), interval);
   return { section: newSection, done: isDone, next_review: next };
-}
-
-// ── Dutch sentence generator ─────────────────────────────────
-const sentenceCache={};
-
-async function fetchExampleSentence(word, meaning, lang){
-  const key=word+'|'+lang;
-  if(sentenceCache[key]) return sentenceCache[key];
-  if(!ANTHROPIC_KEY||ANTHROPIC_KEY==='YOUR_API_KEY_HERE'){
-    return {error:'no_key'};
-  }
-  try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':ANTHROPIC_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({
-        model:'claude-haiku-4-5-20251001',
-        max_tokens:120,
-        messages:[{role:'user',content:`Give one short, natural example sentence in ${lang} using the word "${word}" (meaning: ${meaning}). Reply in this exact format with nothing else:
-SENTENCE: <the sentence in ${lang}>
-TRANSLATION: <English translation>`}]
-      })
-    });
-    if(res.status===401||res.status===403) return {error:'auth'};
-    if(res.status===429||res.status===529) return {error:'limit'};
-    if(!res.ok) return {error:'api'};
-    const data=await res.json();
-    const text=data.content?.[0]?.text||'';
-    const sentMatch=text.match(/SENTENCE:\s*(.+)/);
-    const transMatch=text.match(/TRANSLATION:\s*(.+)/);
-    if(!sentMatch) return {error:'parse'};
-    const result={sentence:sentMatch[1].trim(),translation:transMatch?transMatch[1].trim():''};
-    sentenceCache[key]=result;
-    return result;
-  }catch(e){
-    return {error:'network'};
-  }
 }
 
 // ── TTS ───────────────────────────────────────────────────────
@@ -888,7 +843,6 @@ function renderReview(){
       <button class="fc-pron-btn" id="fc-pron-btn" onclick="event.stopPropagation();triggerPron('${w.id}')">
         🔊 <span id="pron-btn-label">Listen</span>
       </button>
-      <div id="fc-sentence" class="fc-sentence" style="display:none"></div>
       <div class="fc-hint" id="fc-hint">tap card to reveal meaning</div>
     </div>
     <div class="verdict-row" id="vrow" style="display:none;margin-top:.75rem">
@@ -906,26 +860,6 @@ function revealCard(){
   $('fc-hint').textContent='how did you do?';
   $('vrow').style.display='flex';
   if(autoPronounce) setTimeout(()=>triggerPron(w.id),300);
-  // show sentence placeholder then fetch
-  const box=$('fc-sentence');
-  if(box){
-    box.style.display='block';
-    box.innerHTML='<span class="fc-sent-loading">Generating example sentence…</span>';
-    fetchExampleSentence(w.word, w.meaning, w.language||'Dutch').then(result=>{
-      if(!box) return;
-      if(result.error==='no_key'){
-        box.style.display='none';
-      } else if(result.error==='auth'){
-        box.innerHTML='<span class="fc-sent-error">⚠ API key invalid or credit exhausted — top up at console.anthropic.com</span>';
-      } else if(result.error==='limit'){
-        box.innerHTML='<span class="fc-sent-error">⚠ API rate limit reached — try again in a moment</span>';
-      } else if(result.error){
-        box.innerHTML='<span class="fc-sent-error">Could not load example sentence</span>';
-      } else {
-        box.innerHTML=`<div class="fc-sent-sentence">"${result.sentence}"</div>${result.translation?`<div class="fc-sent-translation">${result.translation}</div>`:''}`;
-      }
-    });
-  }
 }
 
 async function judge(correct){
