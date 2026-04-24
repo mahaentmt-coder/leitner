@@ -492,14 +492,7 @@ async function deleteWord(id){
 
 async function updateWord(id,fields){
   const {error}=await sb.from('words').update(fields).eq('id',id);
-  if(!error){
-    // update local words array
-    const idx=words.findIndex(w=>w.id===id);
-    if(idx>-1) Object.assign(words[idx],fields);
-    // also update reviewQueue entry so isDue() sees fresh data immediately
-    const qi=reviewQueue.findIndex(w=>w.id===id);
-    if(qi>-1) Object.assign(reviewQueue[qi],fields);
-  }
+  if(!error){const idx=words.findIndex(w=>w.id===id);if(idx>-1)Object.assign(words[idx],fields);}
 }
 
 // ── TTS helpers ───────────────────────────────────────────────
@@ -822,9 +815,7 @@ async function judge(correct){
   const update=computeNextReview(w.section,correct);
   if(correct) stats.ok++; else stats.ng++;
   await updateWord(w.id,update);
-  rIdx++;revealed=false;
-  if(rIdx>=reviewQueue.length){ await fetchWords(); }
-  renderBoxPills();renderReview();
+  rIdx++;revealed=false;renderBoxPills();renderReview();
 }
 
 // ── Summary ───────────────────────────────────────────────────
