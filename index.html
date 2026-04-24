@@ -30,7 +30,6 @@
   body { font-family:'DM Sans',sans-serif;background:var(--bg0);color:var(--text0);min-height:100vh;transition:background .3s,color .3s; }
   .app-shell { max-width:640px;margin:0 auto;padding:2rem 1.25rem 4rem; }
 
-  /* Header */
   .header { display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:2rem; }
   .logo { font-family:'DM Serif Display',serif;font-size:26px;color:var(--text0);line-height:1; }
   .logo span { color:var(--accent); }
@@ -43,30 +42,36 @@
   .avatar { width:24px;height:24px;border-radius:50%;background:var(--accent-bg);color:var(--accent);font-size:11px;font-weight:500;display:flex;align-items:center;justify-content:center; }
   .chip-name { font-size:13px;font-weight:500;color:var(--text0); }
 
-  /* Boxes */
   .boxes-row { display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1.75rem; }
   .box-pill { padding:4px 12px;border-radius:999px;font-size:12px;font-weight:500;border:0.5px solid var(--border0);color:var(--text2);background:var(--bg1); }
   .box-pill.has-words { color:var(--text1);border-color:var(--border1); }
   .box-pill.done { background:var(--accent-bg);color:var(--accent);border-color:var(--accent-light); }
 
-  /* Cards */
   .card { background:var(--card);border:0.5px solid var(--border0);border-radius:16px;padding:1.25rem;box-shadow:var(--shadow);margin-bottom:1rem; }
   .card-title { font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:14px; }
 
-  /* Inputs */
   input[type=text],input[type=password],input[type=url] { width:100%;padding:9px 12px;border:0.5px solid var(--border1);border-radius:8px;font-size:14px;font-family:'DM Sans',sans-serif;background:var(--bg1);color:var(--text0);outline:none;transition:border-color .15s; }
   input:focus { border-color:var(--accent); }
   input::placeholder { color:var(--text2); }
   .row { display:flex;gap:8px; }
   .row input { flex:1; }
 
-  /* Add word grid */
   .add-grid { display:grid;grid-template-columns:1fr 1fr;gap:8px; }
   .add-grid .full { grid-column:1/-1; }
-  .add-grid .pronunciation-wrap { grid-column:1/-1;display:flex;gap:8px;align-items:center; }
-  .pron-type-toggle { display:flex;background:var(--bg1);border:0.5px solid var(--border1);border-radius:8px;overflow:hidden;flex-shrink:0; }
-  .pron-type-toggle button { padding:8px 12px;border:none;background:transparent;font-size:12px;font-weight:500;cursor:pointer;color:var(--text1);font-family:'DM Sans',sans-serif;transition:all .15s; }
-  .pron-type-toggle button.on { background:var(--accent-bg);color:var(--accent); }
+
+  /* Language selector */
+  .lang-row { grid-column:1/-1;display:flex;align-items:center;gap:8px;flex-wrap:wrap; }
+  .lang-label { font-size:12px;color:var(--text2);white-space:nowrap; }
+  .lang-select { padding:7px 10px;border:0.5px solid var(--border1);border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;background:var(--bg1);color:var(--text0);outline:none;cursor:pointer;flex:1; }
+  .lang-select:focus { border-color:var(--accent); }
+  .tts-indicator { font-size:11px;padding:3px 10px;border-radius:999px;background:var(--accent-bg);color:var(--accent);font-weight:500; }
+  .tts-unavailable { background:var(--danger-bg);color:var(--danger); }
+
+  /* Custom audio override row */
+  .audio-override { grid-column:1/-1; }
+  .audio-toggle { font-size:12px;color:var(--text2);cursor:pointer;display:inline-flex;align-items:center;gap:4px;margin-bottom:6px; }
+  .audio-toggle:hover { color:var(--text1); }
+  .audio-override-inner { display:flex;gap:8px;align-items:center; }
 
   .btn { padding:9px 18px;border-radius:8px;border:0.5px solid var(--border1);background:var(--bg1);color:var(--text0);font-size:13px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;transition:background .15s;white-space:nowrap; }
   .btn:hover { background:var(--bg2); }
@@ -77,26 +82,28 @@
   .btn-danger:hover { background:var(--danger-bg); }
   .btn-sm { padding:6px 12px;font-size:12px; }
 
-  /* Word list */
   .word-list { display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto;margin-top:10px; }
   .word-item { display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--bg1);border-radius:8px;font-size:13px; }
   .word-item b { color:var(--text0); }
   .word-item .muted { color:var(--text1); }
   .word-actions { display:flex;align-items:center;gap:6px;flex-shrink:0; }
   .badge { font-size:11px;padding:2px 8px;border-radius:999px;background:var(--accent-bg);color:var(--accent);font-weight:500; }
+  .lang-badge { font-size:11px;padding:2px 8px;border-radius:999px;background:var(--bg2);color:var(--text2);font-weight:500; }
   .del-btn { color:var(--danger);cursor:pointer;font-size:18px;line-height:1;padding:0 2px;opacity:.6; }
   .del-btn:hover { opacity:1; }
-  .play-btn { cursor:pointer;font-size:14px;opacity:.7;background:none;border:none;color:var(--text1); }
-  .play-btn:hover { opacity:1; }
+  .play-btn { cursor:pointer;font-size:14px;background:none;border:none;color:var(--text1);padding:2px 4px;border-radius:4px;transition:all .15s; }
+  .play-btn:hover { background:var(--bg2);color:var(--text0); }
+  .play-btn.speaking { color:var(--accent);animation:pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:.4} }
 
-  /* Flashcard */
   .flashcard { min-height:240px;background:var(--card);border:0.5px solid var(--border1);border-radius:16px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;padding:2rem;text-align:center;cursor:pointer;position:relative;box-shadow:var(--shadow);transition:box-shadow .2s;user-select:none; }
   .flashcard:hover { box-shadow:0 4px 20px rgba(0,0,0,0.1); }
   .fc-word { font-family:'DM Serif Display',serif;font-size:32px;color:var(--text0); }
   .fc-meaning { font-size:17px;color:var(--text1); }
   .fc-hint { position:absolute;bottom:14px;font-size:12px;color:var(--text2); }
-  .fc-pron-btn { font-size:13px;padding:5px 14px;border-radius:999px;border:0.5px solid var(--border1);background:var(--bg1);color:var(--text1);cursor:pointer;display:flex;align-items:center;gap:6px; }
+  .fc-pron-btn { font-size:13px;padding:6px 16px;border-radius:999px;border:0.5px solid var(--border1);background:var(--bg1);color:var(--text1);cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .15s; }
   .fc-pron-btn:hover { background:var(--bg2); }
+  .fc-pron-btn.speaking { border-color:var(--accent);color:var(--accent);background:var(--accent-bg); }
 
   .verdict-row { display:flex;gap:10px;margin-top:.5rem; }
   .verdict-row button { flex:1;padding:11px;border-radius:10px;font-size:14px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;border:none;transition:opacity .15s; }
@@ -105,18 +112,15 @@
   .btn-wrong { background:var(--danger-bg);color:var(--danger); }
   .btn-wrong:hover { opacity:.8; }
 
-  /* Progress */
   .progress-meta { display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:8px; }
   .progress-bar { height:4px;background:var(--bg2);border-radius:2px;overflow:hidden;margin-bottom:1rem; }
   .progress-fill { height:100%;background:var(--accent);border-radius:2px;transition:width .3s; }
 
-  /* Summary */
   .stat-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:1rem; }
   .stat-box { background:var(--bg1);border-radius:10px;padding:.75rem;text-align:center; }
   .stat-val { font-size:24px;font-weight:500;color:var(--text0); }
   .stat-lbl { font-size:11px;color:var(--text2);margin-top:2px; }
 
-  /* Profile */
   .profile-list { display:flex;flex-direction:column;gap:8px; }
   .profile-row { display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--bg1);border:0.5px solid var(--border0);border-radius:12px;cursor:pointer;transition:border-color .15s; }
   .profile-row:hover { border-color:var(--border1); }
@@ -125,7 +129,6 @@
   .avatar-lg { width:40px;height:40px;border-radius:50%;background:var(--accent-bg);color:var(--accent);font-size:15px;font-weight:500;display:flex;align-items:center;justify-content:center; }
   .profile-name { font-size:15px;font-weight:500;color:var(--text0); }
 
-  /* Login */
   .login-wrap { max-width:400px;margin:3rem auto 0;text-align:center; }
   .login-title { font-family:'DM Serif Display',serif;font-size:32px;color:var(--text0);margin-bottom:.5rem; }
   .login-sub { font-size:14px;color:var(--text1);margin-bottom:2rem; }
@@ -136,7 +139,6 @@
   .tab-switch button { flex:1;padding:7px;border:none;background:transparent;border-radius:7px;font-size:13px;font-weight:500;font-family:'DM Sans',sans-serif;color:var(--text1);cursor:pointer;transition:all .15s; }
   .tab-switch button.on { background:var(--card);color:var(--text0);box-shadow:0 1px 4px rgba(0,0,0,0.08); }
 
-  /* Import */
   .drop-zone { border:1.5px dashed var(--border1);border-radius:12px;padding:2rem;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg1); }
   .drop-zone:hover,.drop-zone.over { border-color:var(--accent);background:var(--accent-bg); }
   .drop-zone p { font-size:14px;color:var(--text1);margin-bottom:.5rem; }
@@ -145,8 +147,8 @@
   .preview-row { display:flex;gap:8px;padding:5px 8px;background:var(--bg1);border-radius:6px;font-size:12px; }
   .preview-row .pw { font-weight:500;flex:1;color:var(--text0); }
   .preview-row .pm { flex:1;color:var(--text1); }
-  .preview-row .pp { flex:1;color:var(--text2);font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
-  .info-box { background:var(--info-bg);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--info);margin-bottom:1rem;line-height:1.5; }
+  .preview-row .pl { color:var(--accent);font-size:11px;white-space:nowrap; }
+  .info-box { background:var(--info-bg);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--info);margin-bottom:1rem;line-height:1.6; }
 
   .msg { font-size:13px;padding:8px 12px;border-radius:8px;margin-top:.75rem; }
   .msg.err { background:var(--danger-bg);color:var(--danger); }
@@ -160,10 +162,18 @@
   .back-link:hover { color:var(--text0); }
   .pin-input { letter-spacing:6px;font-size:20px;text-align:center;font-weight:500; }
 
-  /* Tabs in add section */
   .section-tabs { display:flex;gap:4px;margin-bottom:1rem;background:var(--bg1);border-radius:10px;padding:4px; }
   .section-tabs button { flex:1;padding:6px;border:none;background:transparent;border-radius:7px;font-size:12px;font-weight:500;font-family:'DM Sans',sans-serif;color:var(--text1);cursor:pointer;transition:all .15s; }
   .section-tabs button.on { background:var(--card);color:var(--text0);box-shadow:0 1px 4px rgba(0,0,0,0.08); }
+
+  /* auto-pronounce toggle */
+  .auto-pron-bar { display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--accent-bg);border-radius:10px;margin-bottom:1rem;font-size:13px;color:var(--accent); }
+  .toggle-switch { position:relative;width:36px;height:20px;flex-shrink:0; }
+  .toggle-switch input { opacity:0;width:0;height:0; }
+  .toggle-slider { position:absolute;inset:0;background:var(--bg2);border-radius:999px;cursor:pointer;transition:.2s; }
+  .toggle-slider:before { content:'';position:absolute;width:14px;height:14px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s; }
+  .toggle-switch input:checked + .toggle-slider { background:var(--accent); }
+  .toggle-switch input:checked + .toggle-slider:before { transform:translateX(16px); }
 </style>
 </head>
 <body>
@@ -195,11 +205,65 @@ const LAST_SECTIONS=[1,3,7,15,31];
 
 let profile=null,words=[],isDark=false;
 let reviewQueue=[],rIdx=0,revealed=false,stats={ok:0,ng:0};
-let pronType='url'; // 'url' or 'file'
-let importRows=[]; // parsed excel rows pending import
-let currentAudio=null;
+let importRows=[];
+let autoPronounce=true; // auto-play TTS on card reveal
+let currentUtterance=null;
 
-// ── Theme ──────────────────────────────────────
+// ── All supported TTS languages ──────────────────────────────
+const LANGUAGES=[
+  {code:'nl-NL',label:'Dutch (Nederlands)'},
+  {code:'en-US',label:'English (US)'},
+  {code:'en-GB',label:'English (UK)'},
+  {code:'de-DE',label:'German (Deutsch)'},
+  {code:'fr-FR',label:'French (Français)'},
+  {code:'es-ES',label:'Spanish (Español)'},
+  {code:'it-IT',label:'Italian (Italiano)'},
+  {code:'pt-PT',label:'Portuguese'},
+  {code:'pl-PL',label:'Polish'},
+  {code:'ru-RU',label:'Russian'},
+  {code:'ja-JP',label:'Japanese'},
+  {code:'zh-CN',label:'Chinese (Mandarin)'},
+  {code:'ko-KR',label:'Korean'},
+  {code:'ar-SA',label:'Arabic'},
+  {code:'tr-TR',label:'Turkish'},
+  {code:'sv-SE',label:'Swedish'},
+  {code:'da-DK',label:'Danish'},
+  {code:'fi-FI',label:'Finnish'},
+  {code:'nb-NO',label:'Norwegian'},
+];
+let selectedLang='nl-NL'; // default Dutch
+
+// ── TTS ───────────────────────────────────────────────────────
+function ttsAvailable(lang){
+  if(!window.speechSynthesis)return false;
+  const voices=window.speechSynthesis.getVoices();
+  if(!voices.length)return true; // voices not loaded yet, optimistically true
+  return voices.some(v=>v.lang.startsWith(lang.split('-')[0]));
+}
+
+function speak(text, lang, onStart, onEnd){
+  if(!window.speechSynthesis)return;
+  window.speechSynthesis.cancel();
+  const utt=new SpeechSynthesisUtterance(text);
+  utt.lang=lang||'nl-NL';
+  utt.rate=0.9;
+  // try to find a native voice for the language
+  const voices=window.speechSynthesis.getVoices();
+  const match=voices.find(v=>v.lang===lang)||voices.find(v=>v.lang.startsWith(lang.split('-')[0]));
+  if(match)utt.voice=match;
+  utt.onstart=onStart||null;
+  utt.onend=onEnd||null;
+  utt.onerror=onEnd||null;
+  currentUtterance=utt;
+  window.speechSynthesis.speak(utt);
+}
+
+function stopSpeech(){
+  if(window.speechSynthesis)window.speechSynthesis.cancel();
+  currentUtterance=null;
+}
+
+// ── Theme ──────────────────────────────────────────────────────
 function toggleTheme(){
   isDark=!isDark;
   document.documentElement.setAttribute('data-theme',isDark?'dark':'light');
@@ -207,21 +271,16 @@ function toggleTheme(){
   localStorage.setItem('leitner_theme',isDark?'dark':'light');
 }
 if(localStorage.getItem('leitner_theme')==='dark')toggleTheme();
+if(localStorage.getItem('leitner_lang'))selectedLang=localStorage.getItem('leitner_lang');
+if(localStorage.getItem('leitner_autopron')!==null)autoPronounce=localStorage.getItem('leitner_autopron')==='true';
 
-// ── Helpers ────────────────────────────────────
+// ── Helpers ────────────────────────────────────────────────────
 const $=id=>document.getElementById(id);
 const initials=n=>n.split(' ').map(p=>p[0]).join('').toUpperCase().slice(0,2);
 const getBoxNum=s=>{let c=0;for(let i=0;i<BOX_SIZES.length;i++){c+=BOX_SIZES[i];if(s<=c)return i+1;}return 6;};
 const shuffle=a=>[...a].sort(()=>Math.random()-.5);
 const spin=()=>`<div class="spinner"></div>`;
-
-function playAudio(src){
-  if(!src)return;
-  if(currentAudio){currentAudio.pause();currentAudio=null;}
-  // if it's a base64/blob URL or http URL
-  currentAudio=new Audio(src);
-  currentAudio.play().catch(()=>{});
-}
+const langLabel=code=>{const l=LANGUAGES.find(x=>x.code===code);return l?l.label.split(' ')[0]:code;};
 
 function renderBoxPills(){
   if(!profile){$('boxes-row').innerHTML='';return;}
@@ -244,7 +303,11 @@ function updateChip(){
   $('header-sub').textContent=profile.username+"'s vocabulary";
 }
 
-// ── Auth ───────────────────────────────────────
+function langOptions(selected){
+  return LANGUAGES.map(l=>`<option value="${l.code}"${l.code===selected?' selected':''}>${l.label}</option>`).join('');
+}
+
+// ── Auth ────────────────────────────────────────────────────────
 function showLogin(){
   profile=null;words=[];updateChip();renderBoxPills();
   $('header-sub').textContent='spaced repetition trainer';
@@ -309,7 +372,7 @@ async function loadProfile(p){
   await fetchWords();updateChip();renderBoxPills();renderHome();
 }
 
-// ── Profile switcher ───────────────────────────
+// ── Profile switcher ────────────────────────────────────────────
 async function showProfiles(){
   $('main').innerHTML=spin();
   const {data}=await sb.from('profiles').select('id,username').order('username');
@@ -339,7 +402,7 @@ async function switchProfile(id,username){
 
 function signOut(){localStorage.removeItem('leitner_profile');showLogin();}
 
-// ── Words CRUD ────────────────────────────────
+// ── Words CRUD ─────────────────────────────────────────────────
 async function fetchWords(){
   const {data}=await sb.from('words').select('*').eq('profile_id',profile.id).order('created_at');
   words=data||[];
@@ -349,16 +412,11 @@ async function addWord(){
   const w=$('inp-word').value.trim();
   const m=$('inp-meaning').value.trim();
   if(!w||!m)return;
-  let pronunciation=null;
-  if(pronType==='url'){
-    pronunciation=$('inp-pron-url')?$('inp-pron-url').value.trim()||null:null;
-  } else {
-    pronunciation=window._pronBase64||null;
-  }
+  const lang=selectedLang;
+  const pronunciation=$('inp-pron-url')?$('inp-pron-url').value.trim()||null:null;
   $('inp-word').value='';$('inp-meaning').value='';
   if($('inp-pron-url'))$('inp-pron-url').value='';
-  window._pronBase64=null;
-  const {data,error}=await sb.from('words').insert({profile_id:profile.id,word:w,meaning:m,section:1,done:false,pronunciation}).select().single();
+  const {data,error}=await sb.from('words').insert({profile_id:profile.id,word:w,meaning:m,section:1,done:false,pronunciation,language:lang}).select().single();
   if(!error&&data)words.push(data);
   renderBoxPills();renderHome();
 }
@@ -375,12 +433,29 @@ async function updateWord(id,fields){
   if(idx>-1)Object.assign(words[idx],fields);
 }
 
-// ── Excel import ──────────────────────────────
+// ── Speak word ──────────────────────────────────────────────────
+function speakWord(word, lang, btnId){
+  const btn=btnId?$(btnId):null;
+  if(btn){btn.classList.add('speaking');}
+  speak(word, lang||'nl-NL',
+    null,
+    ()=>{ if(btn)btn.classList.remove('speaking'); }
+  );
+}
+
+// ── Excel import ───────────────────────────────────────────────
 function renderImportTab(){
   $('add-section-body').innerHTML=`
     <div class="info-box">
-      📋 Excel file should have columns: <b>word</b>, <b>meaning</b>, and optionally <b>pronunciation</b> (URL).<br>
-      First row = headers. Download <a href="#" onclick="downloadTemplate();return false;" style="color:var(--accent)">template</a>.
+      📋 Columns: <b>word</b>, <b>meaning</b>, optionally <b>language</b> (e.g. nl-NL) and <b>pronunciation</b> (URL).<br>
+      If no language column, all words use the selected language above.<br>
+      <a href="#" onclick="downloadTemplate();return false;" style="color:var(--accent)">Download template ↓</a>
+    </div>
+    <div style="margin-bottom:10px">
+      <label class="form-label">Default language for imported words</label>
+      <select class="lang-select" id="import-lang" onchange="selectedLang=this.value;localStorage.setItem('leitner_lang',this.value)">
+        ${langOptions(selectedLang)}
+      </select>
     </div>
     <div class="drop-zone" id="drop-zone" onclick="$('file-input').click()">
       <p>📂 Click or drag & drop your Excel file here</p>
@@ -388,15 +463,14 @@ function renderImportTab(){
     </div>
     <input type="file" id="file-input" accept=".xlsx,.xls" style="display:none" onchange="handleExcelFile(this.files[0])" />
     <div id="import-preview"></div>
-    <div id="import-actions" style="display:none;margin-top:.75rem;display:none">
+    <div id="import-actions" style="display:none;margin-top:.75rem">
       <button class="btn btn-primary btn-full" onclick="confirmImport()" id="import-btn">Import words</button>
     </div>`;
   setupDropZone();
 }
 
 function setupDropZone(){
-  const dz=$('drop-zone');
-  if(!dz)return;
+  const dz=$('drop-zone');if(!dz)return;
   dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('over');});
   dz.addEventListener('dragleave',()=>dz.classList.remove('over'));
   dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('over');const f=e.dataTransfer.files[0];if(f)handleExcelFile(f);});
@@ -410,16 +484,15 @@ function handleExcelFile(file){
       const wb=XLSX.read(e.target.result,{type:'binary'});
       const ws=wb.Sheets[wb.SheetNames[0]];
       const data=XLSX.utils.sheet_to_json(ws,{defval:''});
-      // normalize headers
+      const importLang=($('import-lang')?$('import-lang').value:null)||selectedLang;
       importRows=data.map(r=>{
-        const keys=Object.keys(r).map(k=>k.toLowerCase().trim());
-        const vals=Object.values(r);
         const obj={};
-        keys.forEach((k,i)=>{obj[k]=String(vals[i]).trim();});
+        Object.keys(r).forEach(k=>{obj[k.toLowerCase().trim()]=String(r[k]).trim();});
         return {
-          word: obj['word']||obj['term']||obj['w']||'',
-          meaning: obj['meaning']||obj['definition']||obj['translation']||obj['m']||'',
-          pronunciation: obj['pronunciation']||obj['audio']||obj['url']||''
+          word:obj['word']||obj['term']||obj['w']||'',
+          meaning:obj['meaning']||obj['definition']||obj['translation']||obj['m']||'',
+          language:obj['language']||obj['lang']||importLang,
+          pronunciation:obj['pronunciation']||obj['audio']||''
         };
       }).filter(r=>r.word&&r.meaning);
       renderImportPreview();
@@ -431,45 +504,47 @@ function handleExcelFile(file){
 }
 
 function renderImportPreview(){
-  if(importRows.length===0){$('import-preview').innerHTML='<div class="msg err">No valid rows found. Check that columns are named: word, meaning.</div>';return;}
-  const rows=importRows.slice(0,10).map(r=>`
+  if(!importRows.length){$('import-preview').innerHTML='<div class="msg err">No valid rows found.</div>';return;}
+  const rows=importRows.slice(0,8).map(r=>`
     <div class="preview-row">
       <span class="pw">${r.word}</span>
       <span class="pm">${r.meaning}</span>
-      <span class="pp">${r.pronunciation||'—'}</span>
+      <span class="pl">${r.language}</span>
     </div>`).join('');
-  const more=importRows.length>10?`<div style="font-size:12px;color:var(--text2);padding:4px 8px">...and ${importRows.length-10} more</div>`:'';
+  const more=importRows.length>8?`<div style="font-size:12px;color:var(--text2);padding:4px 8px">...and ${importRows.length-8} more</div>`:'';
   $('import-preview').innerHTML=`
     <div style="font-size:12px;color:var(--text2);margin:10px 0 4px;display:flex;gap:8px;padding:0 8px">
-      <span style="flex:1;font-weight:500">Word</span><span style="flex:1;font-weight:500">Meaning</span><span style="flex:1;font-weight:500">Pronunciation</span>
+      <span style="flex:1;font-weight:500">Word</span><span style="flex:1;font-weight:500">Meaning</span><span style="font-weight:500">Lang</span>
     </div>
     <div class="import-preview">${rows}${more}</div>
-    <div class="msg ok" style="margin-top:8px">Found ${importRows.length} word${importRows.length!==1?'s':''} ready to import</div>`;
+    <div class="msg ok" style="margin-top:8px">✓ ${importRows.length} word${importRows.length!==1?'s':''} ready to import</div>`;
   $('import-actions').style.display='block';
 }
 
 async function confirmImport(){
   if(!importRows.length)return;
-  const btn=$('import-btn');
-  btn.textContent='Importing...';btn.disabled=true;
-  const toInsert=importRows.map(r=>({profile_id:profile.id,word:r.word,meaning:r.meaning,section:1,done:false,pronunciation:r.pronunciation||null}));
-  // batch insert in chunks of 50
+  const btn=$('import-btn');btn.textContent='Importing…';btn.disabled=true;
+  const toInsert=importRows.map(r=>({profile_id:profile.id,word:r.word,meaning:r.meaning,section:1,done:false,language:r.language||selectedLang,pronunciation:r.pronunciation||null}));
   for(let i=0;i<toInsert.length;i+=50){
     const {data,error}=await sb.from('words').insert(toInsert.slice(i,i+50)).select();
     if(!error&&data)words.push(...data);
   }
-  importRows=[];
-  renderBoxPills();renderHome();
+  importRows=[];renderBoxPills();renderHome();
 }
 
 function downloadTemplate(){
-  const ws=XLSX.utils.aoa_to_sheet([['word','meaning','pronunciation'],['hello','hallo (Dutch)','https://example.com/hello.mp3'],['world','wereld (Dutch)','']]);
+  const ws=XLSX.utils.aoa_to_sheet([
+    ['word','meaning','language','pronunciation'],
+    ['hallo','hello','nl-NL',''],
+    ['wereld','world','nl-NL',''],
+    ['boek','book','nl-NL',''],
+  ]);
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'Words');
   XLSX.writeFile(wb,'leitner_template.xlsx');
 }
 
-// ── Home ───────────────────────────────────────
+// ── Home ───────────────────────────────────────────────────────
 function renderHome(){
   const due=words.filter(w=>LAST_SECTIONS.includes(w.section));
   const wordItems=words.length===0
@@ -478,7 +553,8 @@ function renderHome(){
       <div class="word-item">
         <span><b>${w.word}</b> — <span class="muted">${w.meaning}</span></span>
         <span class="word-actions">
-          ${w.pronunciation?`<button class="play-btn" onclick="playAudio('${w.pronunciation}')" title="Play pronunciation">🔊</button>`:''}
+          <button class="play-btn" id="pb-${w.id}" onclick="speakWord('${w.word.replace(/'/g,"\\'")}','${w.language||selectedLang}','pb-${w.id}')" title="Listen">🔊</button>
+          ${w.language?`<span class="lang-badge">${langLabel(w.language)}</span>`:''}
           <span class="badge">§${w.section}</span>
           <span class="del-btn" onclick="deleteWord('${w.id}')">×</span>
         </span>
@@ -497,7 +573,9 @@ function renderHome(){
       <div class="word-list">${wordItems}</div>
     </div>
     ${due.length>0
-      ?`<button class="btn btn-primary btn-full" style="border-radius:10px;padding:12px;font-size:15px" onclick="startReview()">Review ${due.length} word${due.length!==1?'s':''} due ↗</button>`
+      ?`<button class="btn btn-primary btn-full" style="border-radius:10px;padding:12px;font-size:15px" onclick="startReview()">
+          Review ${due.length} word${due.length!==1?'s':''} due ↗
+        </button>`
       :`<div class="no-due">${words.length===0?'Add words to start learning':'No words due for review right now.'}</div>`}`;
   renderSingleAddTab();
 }
@@ -509,95 +587,130 @@ function switchAddTab(tab){
 }
 
 function renderSingleAddTab(){
+  const avail=ttsAvailable(selectedLang);
   $('add-section-body').innerHTML=`
     <div class="add-grid">
+      <div class="lang-row">
+        <span class="lang-label">🔊 Language:</span>
+        <select class="lang-select" id="lang-sel" onchange="changeLang(this.value)">
+          ${langOptions(selectedLang)}
+        </select>
+        <span class="tts-indicator${avail?'':' tts-unavailable'}">${avail?'TTS ready':'TTS unavailable'}</span>
+      </div>
       <input type="text" id="inp-word" placeholder="Word / term" />
       <input type="text" id="inp-meaning" placeholder="Meaning / translation" />
-      <div class="pronunciation-wrap">
-        <div class="pron-type-toggle">
-          <button class="${pronType==='url'?'on':''}" onclick="setPronType('url')">URL</button>
-          <button class="${pronType==='file'?'on':''}" onclick="setPronType('file')">File</button>
+      <div class="audio-override full">
+        <div class="audio-toggle" onclick="toggleAudioOverride()">
+          <span id="audio-toggle-icon">▶</span> Custom audio URL (optional)
         </div>
-        <div id="pron-input-wrap" style="flex:1"></div>
+        <div id="audio-override-inner" style="display:none">
+          <input type="url" id="inp-pron-url" placeholder="https://... (mp3/ogg link, overrides TTS)" />
+        </div>
       </div>
-      <div class="full" style="display:flex;justify-content:flex-end">
+      <div class="full" style="display:flex;justify-content:flex-end;gap:8px;align-items:center">
+        <button class="btn btn-sm" onclick="previewWord()" title="Preview pronunciation">🔊 Preview</button>
         <button class="btn btn-primary" onclick="addWord()">Add word</button>
       </div>
     </div>`;
-  renderPronInput();
   $('inp-word').addEventListener('keydown',e=>e.key==='Enter'&&$('inp-meaning').focus());
   $('inp-meaning').addEventListener('keydown',e=>e.key==='Enter'&&addWord());
 }
 
-function setPronType(t){
-  pronType=t;
-  // re-render just the toggle buttons
-  document.querySelectorAll('.pron-type-toggle button').forEach((b,i)=>{
-    b.className=(i===0&&t==='url')||(i===1&&t==='file')?'on':'';
-  });
-  renderPronInput();
+function changeLang(val){
+  selectedLang=val;
+  localStorage.setItem('leitner_lang',val);
+  // update TTS indicator
+  const avail=ttsAvailable(val);
+  const ind=document.querySelector('.tts-indicator');
+  if(ind){ind.textContent=avail?'TTS ready':'TTS unavailable';ind.className='tts-indicator'+(avail?'':' tts-unavailable');}
 }
 
-function renderPronInput(){
-  const wrap=$('pron-input-wrap');
-  if(!wrap)return;
-  if(pronType==='url'){
-    wrap.innerHTML=`<input type="url" id="inp-pron-url" placeholder="Pronunciation URL (optional, e.g. mp3 link)" />`;
+function toggleAudioOverride(){
+  const inner=$('audio-override-inner');
+  const icon=$('audio-toggle-icon');
+  if(!inner)return;
+  const show=inner.style.display==='none';
+  inner.style.display=show?'block':'none';
+  if(icon)icon.textContent=show?'▼':'▶';
+}
+
+function previewWord(){
+  const w=$('inp-word')?$('inp-word').value.trim():'';
+  if(!w){return;}
+  const url=$('inp-pron-url')?$('inp-pron-url').value.trim():'';
+  if(url){
+    const a=new Audio(url);a.play().catch(()=>{});
   } else {
-    wrap.innerHTML=`
-      <div style="display:flex;align-items:center;gap:8px">
-        <button class="btn btn-sm" onclick="$('pron-file-inp').click()">📂 Choose audio file</button>
-        <span id="pron-file-label" style="font-size:12px;color:var(--text2)">No file chosen</span>
-        <input type="file" id="pron-file-inp" accept="audio/*" style="display:none" onchange="handlePronFile(this)" />
-      </div>`;
+    speak(w,selectedLang);
   }
 }
 
-function handlePronFile(input){
-  const file=input.files[0];
-  if(!file)return;
-  // Check size — Supabase text column, store as base64 (small files only)
-  if(file.size>500000){
-    $('pron-file-label').textContent='⚠ File too large (max 500KB). Use a URL instead.';
-    $('pron-file-label').style.color='var(--danger)';
-    return;
-  }
-  const reader=new FileReader();
-  reader.onload=e=>{
-    window._pronBase64=e.target.result; // data:audio/...;base64,...
-    $('pron-file-label').textContent='✓ '+file.name;
-    $('pron-file-label').style.color='var(--accent)';
-  };
-  reader.readAsDataURL(file);
-}
-
-// ── Review ────────────────────────────────────
+// ── Review ─────────────────────────────────────────────────────
 function startReview(){
   reviewQueue=shuffle(words.filter(w=>LAST_SECTIONS.includes(w.section)));
-  rIdx=0;revealed=false;stats={ok:0,ng:0};renderReview();
+  rIdx=0;revealed=false;stats={ok:0,ng:0};
+  renderReview();
 }
 
 function renderReview(){
   if(rIdx>=reviewQueue.length){renderSummary();return;}
   const w=reviewQueue[rIdx];
   const pct=Math.round(rIdx/reviewQueue.length*100);
+  const lang=w.language||selectedLang;
+
   $('main').innerHTML=`
-    <button class="back-link" onclick="renderHome();renderBoxPills()">← back to list</button>
+    <button class="back-link" onclick="stopSpeech();renderHome();renderBoxPills()">← back to list</button>
     <div class="progress-meta">
       <span>${rIdx+1} of ${reviewQueue.length}</span>
-      <span>Section ${w.section} · Box ${getBoxNum(w.section)}</span>
+      <span>Section ${w.section} · Box ${getBoxNum(w.section)} · ${langLabel(lang)}</span>
     </div>
     <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem;font-size:12px;color:var(--text2)">
+      <span>Auto-pronounce on reveal</span>
+      <label class="toggle-switch">
+        <input type="checkbox" ${autoPronounce?'checked':''} onchange="autoPronounce=this.checked;localStorage.setItem('leitner_autopron',this.checked)" />
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
     <div class="flashcard" onclick="revealCard()" id="fc">
       <div class="fc-word">${w.word}</div>
       <div id="fc-meaning" style="display:none" class="fc-meaning"></div>
-      ${w.pronunciation?`<button class="fc-pron-btn" id="fc-pron-btn" onclick="event.stopPropagation();playAudio('${w.pronunciation.replace(/'/g,"\\'")}')">🔊 Pronunciation</button>`:''}
-      <div class="fc-hint" id="fc-hint">tap to reveal</div>
+      <button class="fc-pron-btn" id="fc-pron-btn" onclick="event.stopPropagation();triggerPron('${w.id}')">
+        🔊 <span id="pron-btn-label">Listen</span>
+      </button>
+      <div class="fc-hint" id="fc-hint">tap card to reveal meaning</div>
     </div>
     <div class="verdict-row" id="vrow" style="display:none;margin-top:.75rem">
-      <button class="btn-wrong" onclick="judge(false)">Got it wrong</button>
-      <button class="btn-correct" onclick="judge(true)">Got it right</button>
+      <button class="btn-wrong" onclick="judge(false)">✗ Got it wrong</button>
+      <button class="btn-correct" onclick="judge(true)">✓ Got it right</button>
     </div>`;
+
+  // auto-play word pronunciation immediately when card appears
+  if(autoPronounce){
+    setTimeout(()=>triggerPron(w.id),400);
+  }
+}
+
+function triggerPron(wordId){
+  const w=words.find(x=>x.id===wordId)||reviewQueue[rIdx];
+  if(!w)return;
+  const btn=$('fc-pron-btn');
+  const lbl=$('pron-btn-label');
+  if(btn)btn.classList.add('speaking');
+  if(lbl)lbl.textContent='Playing…';
+  if(w.pronunciation){
+    const a=new Audio(w.pronunciation);
+    a.onended=()=>{if(btn)btn.classList.remove('speaking');if(lbl)lbl.textContent='Listen';};
+    a.onerror=()=>{if(btn)btn.classList.remove('speaking');if(lbl)lbl.textContent='Listen';};
+    a.play().catch(()=>{if(btn)btn.classList.remove('speaking');if(lbl)lbl.textContent='Listen';});
+  } else {
+    speak(w.word, w.language||selectedLang,
+      null,
+      ()=>{if(btn)btn.classList.remove('speaking');if(lbl)lbl.textContent='Listen';}
+    );
+  }
 }
 
 function revealCard(){
@@ -607,9 +720,14 @@ function revealCard(){
   $('fc-meaning').style.display='block';
   $('fc-hint').textContent='how did you do?';
   $('vrow').style.display='flex';
+  // auto-pronounce after reveal too (speak the word again so they hear it with meaning shown)
+  if(autoPronounce){
+    setTimeout(()=>triggerPron(w.id),300);
+  }
 }
 
 async function judge(correct){
+  stopSpeech();
   const w=reviewQueue[rIdx];
   let ns=correct?(w.section===31?31:w.section+1):1;
   let nd=correct&&w.section===31?true:w.done;
@@ -617,8 +735,9 @@ async function judge(correct){
   rIdx++;revealed=false;renderBoxPills();renderReview();
 }
 
-// ── Summary ───────────────────────────────────
+// ── Summary ────────────────────────────────────────────────────
 function renderSummary(){
+  stopSpeech();
   const total=stats.ok+stats.ng,pct=total?Math.round(stats.ok/total*100):0;
   $('main').innerHTML=`
     <div class="card">
@@ -634,9 +753,14 @@ function renderSummary(){
     </div>`;
 }
 
-// ── Boot ──────────────────────────────────────
+// ── Boot ───────────────────────────────────────────────────────
 async function boot(){
   $('main').innerHTML=spin();
+  // preload voices
+  if(window.speechSynthesis){
+    window.speechSynthesis.getVoices();
+    window.speechSynthesis.onvoiceschanged=()=>window.speechSynthesis.getVoices();
+  }
   const saved=localStorage.getItem('leitner_profile');
   if(saved){
     try{
