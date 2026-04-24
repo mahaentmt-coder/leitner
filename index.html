@@ -6,336 +6,164 @@
 <title>Leitner Flashcards</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
   :root {
-    --bg0: #faf9f6;
-    --bg1: #f0ede6;
-    --bg2: #e4dfd4;
-    --text0: #1a1814;
-    --text1: #5c5649;
-    --text2: #a09880;
-    --accent: #3d6b4f;
-    --accent-bg: #e8f0eb;
-    --accent-light: #c8dece;
-    --danger: #a33030;
-    --danger-bg: #f5eaea;
-    --border0: rgba(60,50,30,0.1);
-    --border1: rgba(60,50,30,0.2);
-    --card: #ffffff;
-    --shadow: 0 2px 12px rgba(0,0,0,0.06);
+    --bg0:#faf9f6;--bg1:#f0ede6;--bg2:#e4dfd4;
+    --text0:#1a1814;--text1:#5c5649;--text2:#a09880;
+    --accent:#3d6b4f;--accent-bg:#e8f0eb;--accent-light:#c8dece;
+    --danger:#a33030;--danger-bg:#f5eaea;
+    --border0:rgba(60,50,30,0.1);--border1:rgba(60,50,30,0.2);
+    --card:#ffffff;--shadow:0 2px 12px rgba(0,0,0,0.06);
+    --info-bg:#e8f0fb;--info:#2255a4;
   }
-
   [data-theme=dark] {
-    --bg0: #141210;
-    --bg1: #1e1c19;
-    --bg2: #2a2722;
-    --text0: #f0ece4;
-    --text1: #a09880;
-    --text2: #5c5649;
-    --accent: #6aab82;
-    --accent-bg: #1a2e20;
-    --accent-light: #2a4a34;
-    --danger: #d46060;
-    --danger-bg: #2e1a1a;
-    --border0: rgba(255,255,255,0.08);
-    --border1: rgba(255,255,255,0.15);
-    --card: #1e1c19;
-    --shadow: 0 2px 12px rgba(0,0,0,0.3);
+    --bg0:#141210;--bg1:#1e1c19;--bg2:#2a2722;
+    --text0:#f0ece4;--text1:#a09880;--text2:#5c5649;
+    --accent:#6aab82;--accent-bg:#1a2e20;--accent-light:#2a4a34;
+    --danger:#d46060;--danger-bg:#2e1a1a;
+    --border0:rgba(255,255,255,0.08);--border1:rgba(255,255,255,0.15);
+    --card:#1e1c19;--shadow:0 2px 12px rgba(0,0,0,0.3);
+    --info-bg:#1a2040;--info:#7aa4e8;
   }
+  body { font-family:'DM Sans',sans-serif;background:var(--bg0);color:var(--text0);min-height:100vh;transition:background .3s,color .3s; }
+  .app-shell { max-width:640px;margin:0 auto;padding:2rem 1.25rem 4rem; }
 
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--bg0);
-    color: var(--text0);
-    min-height: 100vh;
-    transition: background .3s, color .3s;
-  }
+  /* Header */
+  .header { display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:2rem; }
+  .logo { font-family:'DM Serif Display',serif;font-size:26px;color:var(--text0);line-height:1; }
+  .logo span { color:var(--accent); }
+  .header-sub { font-size:13px;color:var(--text2);margin-top:4px; }
+  .header-right { display:flex;align-items:center;gap:8px; }
+  .icon-btn { width:36px;height:36px;border-radius:50%;border:0.5px solid var(--border1);background:var(--bg1);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--text1);transition:background .15s; }
+  .icon-btn:hover { background:var(--bg2); }
+  .profile-chip { display:flex;align-items:center;gap:8px;padding:6px 14px 6px 8px;border-radius:999px;border:0.5px solid var(--border1);background:var(--bg1);cursor:pointer;transition:background .15s; }
+  .profile-chip:hover { background:var(--bg2); }
+  .avatar { width:24px;height:24px;border-radius:50%;background:var(--accent-bg);color:var(--accent);font-size:11px;font-weight:500;display:flex;align-items:center;justify-content:center; }
+  .chip-name { font-size:13px;font-weight:500;color:var(--text0); }
 
-  .app-shell {
-    max-width: 640px;
-    margin: 0 auto;
-    padding: 2rem 1.25rem 4rem;
-  }
+  /* Boxes */
+  .boxes-row { display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1.75rem; }
+  .box-pill { padding:4px 12px;border-radius:999px;font-size:12px;font-weight:500;border:0.5px solid var(--border0);color:var(--text2);background:var(--bg1); }
+  .box-pill.has-words { color:var(--text1);border-color:var(--border1); }
+  .box-pill.done { background:var(--accent-bg);color:var(--accent);border-color:var(--accent-light); }
 
-  /* ── Header ── */
-  .header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    margin-bottom: 2rem;
-  }
-  .logo {
-    font-family: 'DM Serif Display', serif;
-    font-size: 26px;
-    color: var(--text0);
-    line-height: 1;
-  }
-  .logo span { color: var(--accent); }
-  .header-sub {
-    font-size: 13px;
-    color: var(--text2);
-    margin-top: 4px;
-  }
-  .header-right { display: flex; align-items: center; gap: 8px; }
+  /* Cards */
+  .card { background:var(--card);border:0.5px solid var(--border0);border-radius:16px;padding:1.25rem;box-shadow:var(--shadow);margin-bottom:1rem; }
+  .card-title { font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--text2);margin-bottom:14px; }
 
-  .icon-btn {
-    width: 36px; height: 36px;
-    border-radius: 50%;
-    border: 0.5px solid var(--border1);
-    background: var(--bg1);
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 15px;
-    color: var(--text1);
-    transition: background .15s;
-  }
-  .icon-btn:hover { background: var(--bg2); }
+  /* Inputs */
+  input[type=text],input[type=password],input[type=url] { width:100%;padding:9px 12px;border:0.5px solid var(--border1);border-radius:8px;font-size:14px;font-family:'DM Sans',sans-serif;background:var(--bg1);color:var(--text0);outline:none;transition:border-color .15s; }
+  input:focus { border-color:var(--accent); }
+  input::placeholder { color:var(--text2); }
+  .row { display:flex;gap:8px; }
+  .row input { flex:1; }
 
-  .profile-chip {
-    display: flex; align-items: center; gap: 8px;
-    padding: 6px 14px 6px 8px;
-    border-radius: 999px;
-    border: 0.5px solid var(--border1);
-    background: var(--bg1);
-    cursor: pointer;
-    transition: background .15s;
-  }
-  .profile-chip:hover { background: var(--bg2); }
-  .avatar {
-    width: 24px; height: 24px; border-radius: 50%;
-    background: var(--accent-bg);
-    color: var(--accent);
-    font-size: 11px; font-weight: 500;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .chip-name { font-size: 13px; font-weight: 500; color: var(--text0); }
+  /* Add word grid */
+  .add-grid { display:grid;grid-template-columns:1fr 1fr;gap:8px; }
+  .add-grid .full { grid-column:1/-1; }
+  .add-grid .pronunciation-wrap { grid-column:1/-1;display:flex;gap:8px;align-items:center; }
+  .pron-type-toggle { display:flex;background:var(--bg1);border:0.5px solid var(--border1);border-radius:8px;overflow:hidden;flex-shrink:0; }
+  .pron-type-toggle button { padding:8px 12px;border:none;background:transparent;font-size:12px;font-weight:500;cursor:pointer;color:var(--text1);font-family:'DM Sans',sans-serif;transition:all .15s; }
+  .pron-type-toggle button.on { background:var(--accent-bg);color:var(--accent); }
 
-  /* ── Boxes row ── */
-  .boxes-row {
-    display: flex; gap: 6px; flex-wrap: wrap;
-    margin-bottom: 1.75rem;
-  }
-  .box-pill {
-    padding: 4px 12px;
-    border-radius: 999px;
-    font-size: 12px; font-weight: 500;
-    border: 0.5px solid var(--border0);
-    color: var(--text2);
-    background: var(--bg1);
-  }
-  .box-pill.has-words { color: var(--text1); border-color: var(--border1); }
-  .box-pill.done { background: var(--accent-bg); color: var(--accent); border-color: var(--accent-light); }
+  .btn { padding:9px 18px;border-radius:8px;border:0.5px solid var(--border1);background:var(--bg1);color:var(--text0);font-size:13px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;transition:background .15s;white-space:nowrap; }
+  .btn:hover { background:var(--bg2); }
+  .btn-primary { background:var(--accent);color:#fff;border-color:var(--accent); }
+  .btn-primary:hover { opacity:.88;background:var(--accent); }
+  .btn-full { width:100%;margin-top:.75rem; }
+  .btn-danger { color:var(--danger);border-color:transparent;background:transparent; }
+  .btn-danger:hover { background:var(--danger-bg); }
+  .btn-sm { padding:6px 12px;font-size:12px; }
 
-  /* ── Cards / sections ── */
-  .card {
-    background: var(--card);
-    border: 0.5px solid var(--border0);
-    border-radius: 16px;
-    padding: 1.25rem;
-    box-shadow: var(--shadow);
-    margin-bottom: 1rem;
-  }
-  .card-title {
-    font-size: 11px; font-weight: 500;
-    text-transform: uppercase; letter-spacing: .06em;
-    color: var(--text2);
-    margin-bottom: 14px;
-  }
+  /* Word list */
+  .word-list { display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto;margin-top:10px; }
+  .word-item { display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--bg1);border-radius:8px;font-size:13px; }
+  .word-item b { color:var(--text0); }
+  .word-item .muted { color:var(--text1); }
+  .word-actions { display:flex;align-items:center;gap:6px;flex-shrink:0; }
+  .badge { font-size:11px;padding:2px 8px;border-radius:999px;background:var(--accent-bg);color:var(--accent);font-weight:500; }
+  .del-btn { color:var(--danger);cursor:pointer;font-size:18px;line-height:1;padding:0 2px;opacity:.6; }
+  .del-btn:hover { opacity:1; }
+  .play-btn { cursor:pointer;font-size:14px;opacity:.7;background:none;border:none;color:var(--text1); }
+  .play-btn:hover { opacity:1; }
 
-  /* ── Inputs ── */
-  input[type=text], input[type=password] {
-    width: 100%;
-    padding: 9px 12px;
-    border: 0.5px solid var(--border1);
-    border-radius: 8px;
-    font-size: 14px;
-    font-family: 'DM Sans', sans-serif;
-    background: var(--bg1);
-    color: var(--text0);
-    outline: none;
-    transition: border-color .15s;
-  }
-  input[type=text]:focus, input[type=password]:focus { border-color: var(--accent); }
-  input::placeholder { color: var(--text2); }
+  /* Flashcard */
+  .flashcard { min-height:240px;background:var(--card);border:0.5px solid var(--border1);border-radius:16px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;padding:2rem;text-align:center;cursor:pointer;position:relative;box-shadow:var(--shadow);transition:box-shadow .2s;user-select:none; }
+  .flashcard:hover { box-shadow:0 4px 20px rgba(0,0,0,0.1); }
+  .fc-word { font-family:'DM Serif Display',serif;font-size:32px;color:var(--text0); }
+  .fc-meaning { font-size:17px;color:var(--text1); }
+  .fc-hint { position:absolute;bottom:14px;font-size:12px;color:var(--text2); }
+  .fc-pron-btn { font-size:13px;padding:5px 14px;border-radius:999px;border:0.5px solid var(--border1);background:var(--bg1);color:var(--text1);cursor:pointer;display:flex;align-items:center;gap:6px; }
+  .fc-pron-btn:hover { background:var(--bg2); }
 
-  .row { display: flex; gap: 8px; }
-  .row input { flex: 1; }
+  .verdict-row { display:flex;gap:10px;margin-top:.5rem; }
+  .verdict-row button { flex:1;padding:11px;border-radius:10px;font-size:14px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;border:none;transition:opacity .15s; }
+  .btn-correct { background:var(--accent-bg);color:var(--accent); }
+  .btn-correct:hover { opacity:.8; }
+  .btn-wrong { background:var(--danger-bg);color:var(--danger); }
+  .btn-wrong:hover { opacity:.8; }
 
-  .btn {
-    padding: 9px 18px;
-    border-radius: 8px;
-    border: 0.5px solid var(--border1);
-    background: var(--bg1);
-    color: var(--text0);
-    font-size: 13px; font-weight: 500;
-    font-family: 'DM Sans', sans-serif;
-    cursor: pointer;
-    transition: background .15s;
-    white-space: nowrap;
-  }
-  .btn:hover { background: var(--bg2); }
-  .btn-primary {
-    background: var(--accent);
-    color: #fff;
-    border-color: var(--accent);
-  }
-  .btn-primary:hover { opacity: .88; background: var(--accent); }
-  .btn-full { width: 100%; margin-top: .75rem; }
-  .btn-danger { color: var(--danger); border-color: transparent; background: transparent; }
-  .btn-danger:hover { background: var(--danger-bg); }
+  /* Progress */
+  .progress-meta { display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:8px; }
+  .progress-bar { height:4px;background:var(--bg2);border-radius:2px;overflow:hidden;margin-bottom:1rem; }
+  .progress-fill { height:100%;background:var(--accent);border-radius:2px;transition:width .3s; }
 
-  /* ── Word list ── */
-  .word-list {
-    display: flex; flex-direction: column; gap: 6px;
-    max-height: 200px; overflow-y: auto;
-    margin-top: 10px;
-  }
-  .word-item {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 7px 10px;
-    background: var(--bg1);
-    border-radius: 8px;
-    font-size: 13px;
-  }
-  .word-item b { color: var(--text0); }
-  .word-item .muted { color: var(--text1); }
-  .word-actions { display: flex; align-items: center; gap: 6px; }
-  .badge {
-    font-size: 11px; padding: 2px 8px;
-    border-radius: 999px;
-    background: var(--accent-bg);
-    color: var(--accent); font-weight: 500;
-  }
-  .del-btn {
-    color: var(--danger); cursor: pointer;
-    font-size: 18px; line-height: 1; padding: 0 2px;
-    opacity: .6;
-  }
-  .del-btn:hover { opacity: 1; }
+  /* Summary */
+  .stat-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:1rem; }
+  .stat-box { background:var(--bg1);border-radius:10px;padding:.75rem;text-align:center; }
+  .stat-val { font-size:24px;font-weight:500;color:var(--text0); }
+  .stat-lbl { font-size:11px;color:var(--text2);margin-top:2px; }
 
-  /* ── Flashcard ── */
-  .flashcard {
-    min-height: 220px;
-    background: var(--card);
-    border: 0.5px solid var(--border1);
-    border-radius: 16px;
-    display: flex; align-items: center; justify-content: center;
-    flex-direction: column; gap: 12px;
-    padding: 2rem;
-    text-align: center;
-    cursor: pointer;
-    position: relative;
-    box-shadow: var(--shadow);
-    transition: box-shadow .2s;
-    user-select: none;
-  }
-  .flashcard:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
-  .fc-word { font-family: 'DM Serif Display', serif; font-size: 30px; color: var(--text0); }
-  .fc-meaning { font-size: 17px; color: var(--text1); }
-  .fc-hint { position: absolute; bottom: 14px; font-size: 12px; color: var(--text2); }
+  /* Profile */
+  .profile-list { display:flex;flex-direction:column;gap:8px; }
+  .profile-row { display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--bg1);border:0.5px solid var(--border0);border-radius:12px;cursor:pointer;transition:border-color .15s; }
+  .profile-row:hover { border-color:var(--border1); }
+  .profile-row.active { border-color:var(--accent);background:var(--accent-bg); }
+  .profile-left { display:flex;align-items:center;gap:12px; }
+  .avatar-lg { width:40px;height:40px;border-radius:50%;background:var(--accent-bg);color:var(--accent);font-size:15px;font-weight:500;display:flex;align-items:center;justify-content:center; }
+  .profile-name { font-size:15px;font-weight:500;color:var(--text0); }
 
-  .verdict-row { display: flex; gap: 10px; margin-top: .5rem; }
-  .verdict-row button { flex: 1; padding: 11px; border-radius: 10px; font-size: 14px; font-weight: 500; font-family: 'DM Sans', sans-serif; cursor: pointer; border: none; transition: opacity .15s; }
-  .btn-correct { background: var(--accent-bg); color: var(--accent); }
-  .btn-correct:hover { opacity: .8; }
-  .btn-wrong { background: var(--danger-bg); color: var(--danger); }
-  .btn-wrong:hover { opacity: .8; }
+  /* Login */
+  .login-wrap { max-width:400px;margin:3rem auto 0;text-align:center; }
+  .login-title { font-family:'DM Serif Display',serif;font-size:32px;color:var(--text0);margin-bottom:.5rem; }
+  .login-sub { font-size:14px;color:var(--text1);margin-bottom:2rem; }
+  .login-card { background:var(--card);border:0.5px solid var(--border0);border-radius:16px;padding:1.5rem;box-shadow:var(--shadow);text-align:left; }
+  .form-label { font-size:12px;font-weight:500;color:var(--text2);margin-bottom:6px;display:block; }
+  .form-group { margin-bottom:1rem; }
+  .tab-switch { display:flex;gap:4px;margin-bottom:1.25rem;background:var(--bg1);border-radius:10px;padding:4px; }
+  .tab-switch button { flex:1;padding:7px;border:none;background:transparent;border-radius:7px;font-size:13px;font-weight:500;font-family:'DM Sans',sans-serif;color:var(--text1);cursor:pointer;transition:all .15s; }
+  .tab-switch button.on { background:var(--card);color:var(--text0);box-shadow:0 1px 4px rgba(0,0,0,0.08); }
 
-  /* ── Progress ── */
-  .progress-meta {
-    display: flex; justify-content: space-between;
-    font-size: 12px; color: var(--text2);
-    margin-bottom: 8px;
-  }
-  .progress-bar { height: 4px; background: var(--bg2); border-radius: 2px; overflow: hidden; margin-bottom: 1rem; }
-  .progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width .3s; }
+  /* Import */
+  .drop-zone { border:1.5px dashed var(--border1);border-radius:12px;padding:2rem;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg1); }
+  .drop-zone:hover,.drop-zone.over { border-color:var(--accent);background:var(--accent-bg); }
+  .drop-zone p { font-size:14px;color:var(--text1);margin-bottom:.5rem; }
+  .drop-zone small { font-size:12px;color:var(--text2); }
+  .import-preview { margin-top:1rem;max-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:4px; }
+  .preview-row { display:flex;gap:8px;padding:5px 8px;background:var(--bg1);border-radius:6px;font-size:12px; }
+  .preview-row .pw { font-weight:500;flex:1;color:var(--text0); }
+  .preview-row .pm { flex:1;color:var(--text1); }
+  .preview-row .pp { flex:1;color:var(--text2);font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+  .info-box { background:var(--info-bg);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--info);margin-bottom:1rem;line-height:1.5; }
 
-  /* ── Summary ── */
-  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 1rem; }
-  .stat-box { background: var(--bg1); border-radius: 10px; padding: .75rem; text-align: center; }
-  .stat-val { font-size: 24px; font-weight: 500; color: var(--text0); }
-  .stat-lbl { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .msg { font-size:13px;padding:8px 12px;border-radius:8px;margin-top:.75rem; }
+  .msg.err { background:var(--danger-bg);color:var(--danger); }
+  .msg.ok { background:var(--accent-bg);color:var(--accent); }
+  .empty { text-align:center;padding:2rem;color:var(--text2);font-size:14px; }
+  .congrats { text-align:center;padding:.75rem;color:var(--accent);font-size:15px;font-weight:500; }
+  .no-due { text-align:center;padding:1.5rem 1rem;color:var(--text2);font-size:14px; }
+  .spinner { width:20px;height:20px;border:2px solid var(--border1);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;margin:2rem auto; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .back-link { display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--text1);cursor:pointer;margin-bottom:1rem;background:none;border:none;font-family:'DM Sans',sans-serif; }
+  .back-link:hover { color:var(--text0); }
+  .pin-input { letter-spacing:6px;font-size:20px;text-align:center;font-weight:500; }
 
-  /* ── Profile picker ── */
-  .profile-list { display: flex; flex-direction: column; gap: 8px; }
-  .profile-row {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 12px 14px;
-    background: var(--bg1);
-    border: 0.5px solid var(--border0);
-    border-radius: 12px;
-    cursor: pointer;
-    transition: border-color .15s;
-  }
-  .profile-row:hover { border-color: var(--border1); }
-  .profile-row.active { border-color: var(--accent); background: var(--accent-bg); }
-  .profile-left { display: flex; align-items: center; gap: 12px; }
-  .avatar-lg {
-    width: 40px; height: 40px; border-radius: 50%;
-    background: var(--accent-bg); color: var(--accent);
-    font-size: 15px; font-weight: 500;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .profile-name { font-size: 15px; font-weight: 500; color: var(--text0); }
-  .profile-meta-text { font-size: 12px; color: var(--text1); margin-top: 2px; }
-
-  /* ── Login form ── */
-  .login-wrap {
-    max-width: 400px; margin: 3rem auto 0;
-    text-align: center;
-  }
-  .login-title {
-    font-family: 'DM Serif Display', serif;
-    font-size: 32px; color: var(--text0);
-    margin-bottom: .5rem;
-  }
-  .login-sub { font-size: 14px; color: var(--text1); margin-bottom: 2rem; }
-  .login-card { background: var(--card); border: 0.5px solid var(--border0); border-radius: 16px; padding: 1.5rem; box-shadow: var(--shadow); text-align: left; }
-  .form-label { font-size: 12px; font-weight: 500; color: var(--text2); margin-bottom: 6px; display: block; }
-  .form-group { margin-bottom: 1rem; }
-  .tab-switch { display: flex; gap: 4px; margin-bottom: 1.25rem; background: var(--bg1); border-radius: 10px; padding: 4px; }
-  .tab-switch button {
-    flex: 1; padding: 7px; border: none; background: transparent;
-    border-radius: 7px; font-size: 13px; font-weight: 500;
-    font-family: 'DM Sans', sans-serif;
-    color: var(--text1); cursor: pointer; transition: all .15s;
-  }
-  .tab-switch button.on { background: var(--card); color: var(--text0); box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
-
-  .msg { font-size: 13px; padding: 8px 12px; border-radius: 8px; margin-top: .75rem; }
-  .msg.err { background: var(--danger-bg); color: var(--danger); }
-  .msg.ok { background: var(--accent-bg); color: var(--accent); }
-
-  .empty { text-align: center; padding: 2rem; color: var(--text2); font-size: 14px; }
-  .congrats { text-align: center; padding: .75rem; color: var(--accent); font-size: 15px; font-weight: 500; }
-  .no-due { text-align: center; padding: 1.5rem 1rem; color: var(--text2); font-size: 14px; }
-
-  .spinner {
-    width: 20px; height: 20px;
-    border: 2px solid var(--border1);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin .7s linear infinite;
-    margin: 2rem auto;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  .back-link {
-    display: inline-flex; align-items: center; gap: 6px;
-    font-size: 13px; color: var(--text1);
-    cursor: pointer; margin-bottom: 1rem;
-    background: none; border: none; font-family: 'DM Sans', sans-serif;
-  }
-  .back-link:hover { color: var(--text0); }
-
-  .pin-input {
-    letter-spacing: 6px;
-    font-size: 20px;
-    text-align: center;
-    font-weight: 500;
-  }
+  /* Tabs in add section */
+  .section-tabs { display:flex;gap:4px;margin-bottom:1rem;background:var(--bg1);border-radius:10px;padding:4px; }
+  .section-tabs button { flex:1;padding:6px;border:none;background:transparent;border-radius:7px;font-size:12px;font-weight:500;font-family:'DM Sans',sans-serif;color:var(--text1);cursor:pointer;transition:all .15s; }
+  .section-tabs button.on { background:var(--card);color:var(--text0);box-shadow:0 1px 4px rgba(0,0,0,0.08); }
 </style>
 </head>
 <body>
@@ -358,61 +186,67 @@
 </div>
 
 <script>
-const SUPABASE_URL = 'https://sudbjoqhzbtfttxqqbej.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_SrRhyTEzPJd7dwfl9PU_sQ_DAKhkknT';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const SUPABASE_URL='https://sudbjoqhzbtfttxqqbej.supabase.co';
+const SUPABASE_KEY='sb_publishable_SrRhyTEzPJd7dwfl9PU_sQ_DAKhkknT';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
-const BOX_SIZES = [2,4,8,15,16,31];
-const LAST_SECTIONS = [1,3,7,15,31];
+const BOX_SIZES=[2,4,8,15,16,31];
+const LAST_SECTIONS=[1,3,7,15,31];
 
-let profile = null; // { id, username }
-let words = [];
-let isDark = false;
-let reviewQueue = [], rIdx = 0, revealed = false, stats = {ok:0,ng:0};
+let profile=null,words=[],isDark=false;
+let reviewQueue=[],rIdx=0,revealed=false,stats={ok:0,ng:0};
+let pronType='url'; // 'url' or 'file'
+let importRows=[]; // parsed excel rows pending import
+let currentAudio=null;
 
-// ── Theme ──────────────────────────────────────────
-function toggleTheme() {
-  isDark = !isDark;
-  document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
-  document.getElementById('theme-btn').textContent = isDark ? '◑' : '☀';
-  localStorage.setItem('leitner_theme', isDark ? 'dark' : 'light');
+// ── Theme ──────────────────────────────────────
+function toggleTheme(){
+  isDark=!isDark;
+  document.documentElement.setAttribute('data-theme',isDark?'dark':'light');
+  document.getElementById('theme-btn').textContent=isDark?'◑':'☀';
+  localStorage.setItem('leitner_theme',isDark?'dark':'light');
 }
-if (localStorage.getItem('leitner_theme') === 'dark') toggleTheme();
+if(localStorage.getItem('leitner_theme')==='dark')toggleTheme();
 
-// ── Helpers ────────────────────────────────────────
-const $= id => document.getElementById(id);
-const initials = n => n.split(' ').map(p=>p[0]).join('').toUpperCase().slice(0,2);
-const getBoxNum = s => { let c=0; for(let i=0;i<BOX_SIZES.length;i++){c+=BOX_SIZES[i];if(s<=c)return i+1;} return 6; };
-const shuffle = a => [...a].sort(()=>Math.random()-.5);
-const spin = () => `<div class="spinner"></div>`;
+// ── Helpers ────────────────────────────────────
+const $=id=>document.getElementById(id);
+const initials=n=>n.split(' ').map(p=>p[0]).join('').toUpperCase().slice(0,2);
+const getBoxNum=s=>{let c=0;for(let i=0;i<BOX_SIZES.length;i++){c+=BOX_SIZES[i];if(s<=c)return i+1;}return 6;};
+const shuffle=a=>[...a].sort(()=>Math.random()-.5);
+const spin=()=>`<div class="spinner"></div>`;
 
-function renderBoxPills() {
-  if (!profile) { $('boxes-row').innerHTML=''; return; }
-  let h='', cum=0;
+function playAudio(src){
+  if(!src)return;
+  if(currentAudio){currentAudio.pause();currentAudio=null;}
+  // if it's a base64/blob URL or http URL
+  currentAudio=new Audio(src);
+  currentAudio.play().catch(()=>{});
+}
+
+function renderBoxPills(){
+  if(!profile){$('boxes-row').innerHTML='';return;}
+  let h='',cum=0;
   for(let i=0;i<BOX_SIZES.length;i++){
     const s=cum+1,e=cum+BOX_SIZES[i];
     const ws=words.filter(w=>w.section>=s&&w.section<=e);
     const done=ws.length>0&&ws.every(w=>w.section===31&&w.done);
-    const has=ws.length>0;
-    h+=`<div class="box-pill${done?' done':has?' has-words':''}">Box ${i+1} <b>${ws.length}</b></div>`;
+    h+=`<div class="box-pill${done?' done':ws.length>0?' has-words':''}">Box ${i+1} <b>${ws.length}</b></div>`;
     cum+=BOX_SIZES[i];
   }
   $('boxes-row').innerHTML=h;
 }
 
-function updateChip() {
-  if (!profile) { $('profile-chip').style.display='none'; return; }
+function updateChip(){
+  if(!profile){$('profile-chip').style.display='none';return;}
   $('profile-chip').style.display='flex';
   $('chip-avatar').textContent=initials(profile.username);
   $('chip-name').textContent=profile.username;
   $('header-sub').textContent=profile.username+"'s vocabulary";
 }
 
-// ── Auth / Profile screen ──────────────────────────
-function showLogin() {
-  profile=null; words=[];
-  updateChip();
-  renderBoxPills();
+// ── Auth ───────────────────────────────────────
+function showLogin(){
+  profile=null;words=[];updateChip();renderBoxPills();
   $('header-sub').textContent='spaced repetition trainer';
   $('main').innerHTML=`
     <div class="login-wrap">
@@ -429,47 +263,39 @@ function showLogin() {
   renderAuthForm('login');
 }
 
-function switchTab(t) {
+function switchTab(t){
   $('tab-login').className=t==='login'?'on':'';
   $('tab-register').className=t==='register'?'on':'';
   renderAuthForm(t);
 }
 
-function renderAuthForm(t) {
+function renderAuthForm(t){
   $('auth-form').innerHTML=`
-    <div class="form-group">
-      <label class="form-label">Username</label>
-      <input type="text" id="f-user" placeholder="e.g. alex" autocomplete="off" />
-    </div>
-    <div class="form-group">
-      <label class="form-label">PIN (4 digits)</label>
-      <input type="password" id="f-pin" class="pin-input" placeholder="····" maxlength="4" inputmode="numeric" autocomplete="off" />
-    </div>
-    <button class="btn btn-primary btn-full" onclick="${t==='login'?'doLogin()':'doRegister()'}">${t==='login'?'Sign in':'Create profile'}</button>
+    <div class="form-group"><label class="form-label">Username</label><input type="text" id="f-user" placeholder="e.g. alex" autocomplete="off" /></div>
+    <div class="form-group"><label class="form-label">PIN (4 digits)</label><input type="password" id="f-pin" class="pin-input" placeholder="····" maxlength="4" inputmode="numeric" /></div>
+    <button class="btn btn-primary btn-full" onclick="${t==='login'?'doLogin()':'doRegister()'}">
+      ${t==='login'?'Sign in':'Create profile'}
+    </button>
     <div id="auth-msg"></div>`;
   $('f-user').addEventListener('keydown',e=>e.key==='Enter'&&$('f-pin').focus());
   $('f-pin').addEventListener('keydown',e=>e.key==='Enter'&&(t==='login'?doLogin():doRegister()));
 }
 
-function authMsg(txt, ok=false) {
-  $('auth-msg').innerHTML=`<div class="msg ${ok?'ok':'err'}">${txt}</div>`;
-}
+function authMsg(txt,ok=false){$('auth-msg').innerHTML=`<div class="msg ${ok?'ok':'err'}">${txt}</div>`;}
 
-async function doRegister() {
-  const u=$('f-user').value.trim().toLowerCase();
-  const p=$('f-pin').value.trim();
+async function doRegister(){
+  const u=$('f-user').value.trim().toLowerCase(),p=$('f-pin').value.trim();
   if(!u||p.length!==4){authMsg('Enter a username and 4-digit PIN.');return;}
   $('auth-msg').innerHTML=spin();
-  const {data:existing}=await sb.from('profiles').select('id').eq('username',u).maybeSingle();
-  if(existing){authMsg('Username taken. Try another.');return;}
+  const {data:ex}=await sb.from('profiles').select('id').eq('username',u).maybeSingle();
+  if(ex){authMsg('Username taken. Try another.');return;}
   const {data,error}=await sb.from('profiles').insert({username:u,pin:p}).select().single();
   if(error){authMsg('Error: '+error.message);return;}
   await loadProfile(data);
 }
 
-async function doLogin() {
-  const u=$('f-user').value.trim().toLowerCase();
-  const p=$('f-pin').value.trim();
+async function doLogin(){
+  const u=$('f-user').value.trim().toLowerCase(),p=$('f-pin').value.trim();
   if(!u||!p){authMsg('Enter your username and PIN.');return;}
   $('auth-msg').innerHTML=spin();
   const {data,error}=await sb.from('profiles').select('*').eq('username',u).eq('pin',p).maybeSingle();
@@ -477,99 +303,182 @@ async function doLogin() {
   await loadProfile(data);
 }
 
-async function loadProfile(p) {
+async function loadProfile(p){
   profile={id:p.id,username:p.username};
   localStorage.setItem('leitner_profile',JSON.stringify(profile));
-  await fetchWords();
-  updateChip();
-  renderBoxPills();
-  renderHome();
+  await fetchWords();updateChip();renderBoxPills();renderHome();
 }
 
-// ── Profile switcher ───────────────────────────────
-async function showProfiles() {
+// ── Profile switcher ───────────────────────────
+async function showProfiles(){
   $('main').innerHTML=spin();
   const {data}=await sb.from('profiles').select('id,username').order('username');
   const profiles=data||[];
-  let rows=profiles.length===0
-    ?'<div class="empty">No profiles yet.</div>'
-    :profiles.map(p=>{
-      const active=profile&&p.id===profile.id;
-      return `<div class="profile-row${active?' active':''}" onclick="switchProfile('${p.id}','${p.username}')">
+  const rows=profiles.length===0?'<div class="empty">No profiles found.</div>'
+    :profiles.map(p=>`
+      <div class="profile-row${profile&&p.id===profile.id?' active':''}" onclick="switchProfile('${p.id}','${p.username}')">
         <div class="profile-left">
           <div class="avatar-lg">${initials(p.username)}</div>
-          <div>
-            <div class="profile-name">${p.username}${active?' (you)':''}</div>
-          </div>
+          <div><div class="profile-name">${p.username}${profile&&p.id===profile.id?' (you)':''}</div></div>
         </div>
-      </div>`;
-    }).join('');
+      </div>`).join('');
   $('main').innerHTML=`
     <button class="back-link" onclick="renderHome()">← back</button>
-    <div class="card">
-      <div class="card-title">Switch profile</div>
-      <div class="profile-list">${rows}</div>
-    </div>
-    <div class="card">
-      <div class="card-title">Sign out</div>
+    <div class="card"><div class="card-title">Switch profile</div><div class="profile-list">${rows}</div></div>
+    <div class="card"><div class="card-title">Sign out</div>
       <button class="btn btn-danger btn-full" onclick="signOut()">Sign out of ${profile.username}</button>
     </div>`;
 }
 
-async function switchProfile(id,username) {
+async function switchProfile(id,username){
   $('main').innerHTML=spin();
   profile={id,username};
   localStorage.setItem('leitner_profile',JSON.stringify(profile));
-  await fetchWords();
-  updateChip();
-  renderBoxPills();
-  renderHome();
+  await fetchWords();updateChip();renderBoxPills();renderHome();
 }
 
-function signOut() {
-  localStorage.removeItem('leitner_profile');
-  showLogin();
-}
+function signOut(){localStorage.removeItem('leitner_profile');showLogin();}
 
-// ── Words CRUD ────────────────────────────────────
-async function fetchWords() {
+// ── Words CRUD ────────────────────────────────
+async function fetchWords(){
   const {data}=await sb.from('words').select('*').eq('profile_id',profile.id).order('created_at');
   words=data||[];
 }
 
-async function addWord() {
+async function addWord(){
   const w=$('inp-word').value.trim();
   const m=$('inp-meaning').value.trim();
   if(!w||!m)return;
-  $('inp-word').value=''; $('inp-meaning').value='';
-  const {data,error}=await sb.from('words').insert({profile_id:profile.id,word:w,meaning:m,section:1,done:false}).select().single();
-  if(!error&&data){words.push(data);}
-  renderBoxPills();
-  renderHome();
+  let pronunciation=null;
+  if(pronType==='url'){
+    pronunciation=$('inp-pron-url')?$('inp-pron-url').value.trim()||null:null;
+  } else {
+    pronunciation=window._pronBase64||null;
+  }
+  $('inp-word').value='';$('inp-meaning').value='';
+  if($('inp-pron-url'))$('inp-pron-url').value='';
+  window._pronBase64=null;
+  const {data,error}=await sb.from('words').insert({profile_id:profile.id,word:w,meaning:m,section:1,done:false,pronunciation}).select().single();
+  if(!error&&data)words.push(data);
+  renderBoxPills();renderHome();
 }
 
-async function deleteWord(id) {
+async function deleteWord(id){
   await sb.from('words').delete().eq('id',id);
   words=words.filter(w=>w.id!==id);
-  renderBoxPills();
-  renderHome();
+  renderBoxPills();renderHome();
 }
 
-async function updateWord(id, fields) {
+async function updateWord(id,fields){
   await sb.from('words').update(fields).eq('id',id);
   const idx=words.findIndex(w=>w.id===id);
   if(idx>-1)Object.assign(words[idx],fields);
 }
 
-// ── Home ───────────────────────────────────────────
-function renderHome() {
+// ── Excel import ──────────────────────────────
+function renderImportTab(){
+  $('add-section-body').innerHTML=`
+    <div class="info-box">
+      📋 Excel file should have columns: <b>word</b>, <b>meaning</b>, and optionally <b>pronunciation</b> (URL).<br>
+      First row = headers. Download <a href="#" onclick="downloadTemplate();return false;" style="color:var(--accent)">template</a>.
+    </div>
+    <div class="drop-zone" id="drop-zone" onclick="$('file-input').click()">
+      <p>📂 Click or drag & drop your Excel file here</p>
+      <small>.xlsx or .xls supported</small>
+    </div>
+    <input type="file" id="file-input" accept=".xlsx,.xls" style="display:none" onchange="handleExcelFile(this.files[0])" />
+    <div id="import-preview"></div>
+    <div id="import-actions" style="display:none;margin-top:.75rem;display:none">
+      <button class="btn btn-primary btn-full" onclick="confirmImport()" id="import-btn">Import words</button>
+    </div>`;
+  setupDropZone();
+}
+
+function setupDropZone(){
+  const dz=$('drop-zone');
+  if(!dz)return;
+  dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('over');});
+  dz.addEventListener('dragleave',()=>dz.classList.remove('over'));
+  dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('over');const f=e.dataTransfer.files[0];if(f)handleExcelFile(f);});
+}
+
+function handleExcelFile(file){
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const wb=XLSX.read(e.target.result,{type:'binary'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const data=XLSX.utils.sheet_to_json(ws,{defval:''});
+      // normalize headers
+      importRows=data.map(r=>{
+        const keys=Object.keys(r).map(k=>k.toLowerCase().trim());
+        const vals=Object.values(r);
+        const obj={};
+        keys.forEach((k,i)=>{obj[k]=String(vals[i]).trim();});
+        return {
+          word: obj['word']||obj['term']||obj['w']||'',
+          meaning: obj['meaning']||obj['definition']||obj['translation']||obj['m']||'',
+          pronunciation: obj['pronunciation']||obj['audio']||obj['url']||''
+        };
+      }).filter(r=>r.word&&r.meaning);
+      renderImportPreview();
+    }catch(err){
+      $('import-preview').innerHTML=`<div class="msg err">Could not read file: ${err.message}</div>`;
+    }
+  };
+  reader.readAsBinaryString(file);
+}
+
+function renderImportPreview(){
+  if(importRows.length===0){$('import-preview').innerHTML='<div class="msg err">No valid rows found. Check that columns are named: word, meaning.</div>';return;}
+  const rows=importRows.slice(0,10).map(r=>`
+    <div class="preview-row">
+      <span class="pw">${r.word}</span>
+      <span class="pm">${r.meaning}</span>
+      <span class="pp">${r.pronunciation||'—'}</span>
+    </div>`).join('');
+  const more=importRows.length>10?`<div style="font-size:12px;color:var(--text2);padding:4px 8px">...and ${importRows.length-10} more</div>`:'';
+  $('import-preview').innerHTML=`
+    <div style="font-size:12px;color:var(--text2);margin:10px 0 4px;display:flex;gap:8px;padding:0 8px">
+      <span style="flex:1;font-weight:500">Word</span><span style="flex:1;font-weight:500">Meaning</span><span style="flex:1;font-weight:500">Pronunciation</span>
+    </div>
+    <div class="import-preview">${rows}${more}</div>
+    <div class="msg ok" style="margin-top:8px">Found ${importRows.length} word${importRows.length!==1?'s':''} ready to import</div>`;
+  $('import-actions').style.display='block';
+}
+
+async function confirmImport(){
+  if(!importRows.length)return;
+  const btn=$('import-btn');
+  btn.textContent='Importing...';btn.disabled=true;
+  const toInsert=importRows.map(r=>({profile_id:profile.id,word:r.word,meaning:r.meaning,section:1,done:false,pronunciation:r.pronunciation||null}));
+  // batch insert in chunks of 50
+  for(let i=0;i<toInsert.length;i+=50){
+    const {data,error}=await sb.from('words').insert(toInsert.slice(i,i+50)).select();
+    if(!error&&data)words.push(...data);
+  }
+  importRows=[];
+  renderBoxPills();renderHome();
+}
+
+function downloadTemplate(){
+  const ws=XLSX.utils.aoa_to_sheet([['word','meaning','pronunciation'],['hello','hallo (Dutch)','https://example.com/hello.mp3'],['world','wereld (Dutch)','']]);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Words');
+  XLSX.writeFile(wb,'leitner_template.xlsx');
+}
+
+// ── Home ───────────────────────────────────────
+function renderHome(){
   const due=words.filter(w=>LAST_SECTIONS.includes(w.section));
   const wordItems=words.length===0
-    ?'<div class="empty">No words yet — add some above!</div>'
+    ?'<div class="empty">No words yet — add some below!</div>'
     :words.map(w=>`
       <div class="word-item">
         <span><b>${w.word}</b> — <span class="muted">${w.meaning}</span></span>
         <span class="word-actions">
+          ${w.pronunciation?`<button class="play-btn" onclick="playAudio('${w.pronunciation}')" title="Play pronunciation">🔊</button>`:''}
           <span class="badge">§${w.section}</span>
           <span class="del-btn" onclick="deleteWord('${w.id}')">×</span>
         </span>
@@ -577,35 +486,98 @@ function renderHome() {
 
   $('main').innerHTML=`
     <div class="card">
-      <div class="card-title">Add a word</div>
-      <div class="row">
-        <input type="text" id="inp-word" placeholder="Word / term" />
-        <input type="text" id="inp-meaning" placeholder="Meaning / translation" />
-        <button class="btn" onclick="addWord()">Add</button>
+      <div class="section-tabs">
+        <button class="on" id="tab-single" onclick="switchAddTab('single')">Add word</button>
+        <button id="tab-import" onclick="switchAddTab('import')">Import Excel</button>
       </div>
+      <div id="add-section-body"></div>
     </div>
     <div class="card">
       <div class="card-title">Word list (${words.length})</div>
       <div class="word-list">${wordItems}</div>
     </div>
     ${due.length>0
-      ?`<button class="btn btn-primary btn-full" style="border-radius:10px;padding:12px;font-size:15px" onclick="startReview()">
-          Review ${due.length} word${due.length!==1?'s':''} due ↗
-        </button>`
-      :`<div class="no-due">${words.length===0?'Add words to start learning':'No words due for review right now — check back later!'}</div>`}`;
+      ?`<button class="btn btn-primary btn-full" style="border-radius:10px;padding:12px;font-size:15px" onclick="startReview()">Review ${due.length} word${due.length!==1?'s':''} due ↗</button>`
+      :`<div class="no-due">${words.length===0?'Add words to start learning':'No words due for review right now.'}</div>`}`;
+  renderSingleAddTab();
+}
 
+function switchAddTab(tab){
+  $('tab-single').className=tab==='single'?'on':'';
+  $('tab-import').className=tab==='import'?'on':'';
+  if(tab==='single')renderSingleAddTab();else renderImportTab();
+}
+
+function renderSingleAddTab(){
+  $('add-section-body').innerHTML=`
+    <div class="add-grid">
+      <input type="text" id="inp-word" placeholder="Word / term" />
+      <input type="text" id="inp-meaning" placeholder="Meaning / translation" />
+      <div class="pronunciation-wrap">
+        <div class="pron-type-toggle">
+          <button class="${pronType==='url'?'on':''}" onclick="setPronType('url')">URL</button>
+          <button class="${pronType==='file'?'on':''}" onclick="setPronType('file')">File</button>
+        </div>
+        <div id="pron-input-wrap" style="flex:1"></div>
+      </div>
+      <div class="full" style="display:flex;justify-content:flex-end">
+        <button class="btn btn-primary" onclick="addWord()">Add word</button>
+      </div>
+    </div>`;
+  renderPronInput();
   $('inp-word').addEventListener('keydown',e=>e.key==='Enter'&&$('inp-meaning').focus());
   $('inp-meaning').addEventListener('keydown',e=>e.key==='Enter'&&addWord());
 }
 
-// ── Review ────────────────────────────────────────
-function startReview() {
-  reviewQueue=shuffle(words.filter(w=>LAST_SECTIONS.includes(w.section)));
-  rIdx=0; revealed=false; stats={ok:0,ng:0};
-  renderReview();
+function setPronType(t){
+  pronType=t;
+  // re-render just the toggle buttons
+  document.querySelectorAll('.pron-type-toggle button').forEach((b,i)=>{
+    b.className=(i===0&&t==='url')||(i===1&&t==='file')?'on':'';
+  });
+  renderPronInput();
 }
 
-function renderReview() {
+function renderPronInput(){
+  const wrap=$('pron-input-wrap');
+  if(!wrap)return;
+  if(pronType==='url'){
+    wrap.innerHTML=`<input type="url" id="inp-pron-url" placeholder="Pronunciation URL (optional, e.g. mp3 link)" />`;
+  } else {
+    wrap.innerHTML=`
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="btn btn-sm" onclick="$('pron-file-inp').click()">📂 Choose audio file</button>
+        <span id="pron-file-label" style="font-size:12px;color:var(--text2)">No file chosen</span>
+        <input type="file" id="pron-file-inp" accept="audio/*" style="display:none" onchange="handlePronFile(this)" />
+      </div>`;
+  }
+}
+
+function handlePronFile(input){
+  const file=input.files[0];
+  if(!file)return;
+  // Check size — Supabase text column, store as base64 (small files only)
+  if(file.size>500000){
+    $('pron-file-label').textContent='⚠ File too large (max 500KB). Use a URL instead.';
+    $('pron-file-label').style.color='var(--danger)';
+    return;
+  }
+  const reader=new FileReader();
+  reader.onload=e=>{
+    window._pronBase64=e.target.result; // data:audio/...;base64,...
+    $('pron-file-label').textContent='✓ '+file.name;
+    $('pron-file-label').style.color='var(--accent)';
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── Review ────────────────────────────────────
+function startReview(){
+  reviewQueue=shuffle(words.filter(w=>LAST_SECTIONS.includes(w.section)));
+  rIdx=0;revealed=false;stats={ok:0,ng:0};renderReview();
+}
+
+function renderReview(){
   if(rIdx>=reviewQueue.length){renderSummary();return;}
   const w=reviewQueue[rIdx];
   const pct=Math.round(rIdx/reviewQueue.length*100);
@@ -617,8 +589,9 @@ function renderReview() {
     </div>
     <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
     <div class="flashcard" onclick="revealCard()" id="fc">
-      <div class="fc-word" id="fc-word">${w.word}</div>
-      <div class="fc-meaning" id="fc-meaning" style="display:none"></div>
+      <div class="fc-word">${w.word}</div>
+      <div id="fc-meaning" style="display:none" class="fc-meaning"></div>
+      ${w.pronunciation?`<button class="fc-pron-btn" id="fc-pron-btn" onclick="event.stopPropagation();playAudio('${w.pronunciation.replace(/'/g,"\\'")}')">🔊 Pronunciation</button>`:''}
       <div class="fc-hint" id="fc-hint">tap to reveal</div>
     </div>
     <div class="verdict-row" id="vrow" style="display:none;margin-top:.75rem">
@@ -627,8 +600,8 @@ function renderReview() {
     </div>`;
 }
 
-function revealCard() {
-  if(revealed)return; revealed=true;
+function revealCard(){
+  if(revealed)return;revealed=true;
   const w=reviewQueue[rIdx];
   $('fc-meaning').textContent=w.meaning;
   $('fc-meaning').style.display='block';
@@ -636,27 +609,17 @@ function revealCard() {
   $('vrow').style.display='flex';
 }
 
-async function judge(correct) {
+async function judge(correct){
   const w=reviewQueue[rIdx];
-  let newSection, newDone=w.done;
-  if(correct){
-    stats.ok++;
-    if(w.section===31){newSection=31;newDone=true;}
-    else newSection=w.section+1;
-  } else {
-    stats.ng++;
-    newSection=1;
-  }
-  await updateWord(w.id,{section:newSection,done:newDone});
-  rIdx++; revealed=false;
-  renderBoxPills();
-  renderReview();
+  let ns=correct?(w.section===31?31:w.section+1):1;
+  let nd=correct&&w.section===31?true:w.done;
+  await updateWord(w.id,{section:ns,done:nd});
+  rIdx++;revealed=false;renderBoxPills();renderReview();
 }
 
-// ── Summary ───────────────────────────────────────
-function renderSummary() {
-  const total=stats.ok+stats.ng;
-  const pct=total?Math.round(stats.ok/total*100):0;
+// ── Summary ───────────────────────────────────
+function renderSummary(){
+  const total=stats.ok+stats.ng,pct=total?Math.round(stats.ok/total*100):0;
   $('main').innerHTML=`
     <div class="card">
       <div class="card-title">Session complete</div>
@@ -666,25 +629,24 @@ function renderSummary() {
         <div class="stat-box"><div class="stat-val">${stats.ng}</div><div class="stat-lbl">wrong</div></div>
         <div class="stat-box"><div class="stat-val">${pct}%</div><div class="stat-lbl">score</div></div>
       </div>
-      ${pct===100?'<div class="congrats">Perfect session! Great work.</div>':''}
+      ${pct===100?'<div class="congrats">Perfect session! Great work. 🎉</div>':''}
       <button class="btn btn-full" style="margin-top:.5rem" onclick="renderHome();renderBoxPills()">← back to list</button>
     </div>`;
 }
 
-// ── Boot ──────────────────────────────────────────
-async function boot() {
+// ── Boot ──────────────────────────────────────
+async function boot(){
   $('main').innerHTML=spin();
   const saved=localStorage.getItem('leitner_profile');
   if(saved){
-    try {
+    try{
       const p=JSON.parse(saved);
       const {data}=await sb.from('profiles').select('*').eq('id',p.id).maybeSingle();
       if(data){await loadProfile(data);return;}
-    } catch(e){}
+    }catch(e){}
   }
   showLogin();
 }
-
 boot();
 </script>
 </body>
