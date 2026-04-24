@@ -181,23 +181,6 @@
   .toggle-switch input:checked + .toggle-slider { background:var(--accent); }
   .toggle-switch input:checked + .toggle-slider:before { transform:translateX(16px); }
   .auto-pron-row { display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:.5rem; }
-
-  /* ── Empty state ── */
-  .empty-state { text-align:center;padding:2.5rem 1rem 1.5rem; }
-  .empty-icon { font-size:40px;margin-bottom:.75rem; }
-  .empty-title { font-family:'DM Serif Display',serif;font-size:22px;color:var(--text0);margin-bottom:.5rem; }
-  .empty-sub { font-size:14px;color:var(--text1);line-height:1.6;max-width:320px;margin:0 auto; }
-
-  /* ── Review CTA ── */
-  .review-cta { border-radius:12px!important;padding:14px!important;font-size:16px!important;margin-bottom:1rem;box-shadow:0 4px 16px rgba(61,107,79,0.25); }
-
-  /* ── Collapsible add word ── */
-  .add-word-details { margin-top:.25rem; }
-  .add-word-details summary { list-style:none;cursor:pointer;font-size:13px;color:var(--text2);padding:10px 4px;display:flex;align-items:center;gap:6px;user-select:none; }
-  .add-word-details summary::-webkit-details-marker { display:none; }
-  .add-word-details summary:hover { color:var(--text1); }
-  .add-word-details[open] summary { color:var(--text0); }
-  .add-word-inner { background:var(--card);border:0.5px solid var(--border0);border-radius:16px;padding:1.25rem;box-shadow:var(--shadow); }
 </style>
 </head>
 <body>
@@ -508,24 +491,15 @@ async function deleteWord(id){
 }
 
 async function updateWord(id,fields){
-  const {data,error}=await sb.from('words').update(fields).eq('id',id).select().single();
-  if(error){
-    console.error('updateWord failed:', error.message, 'fields:', JSON.stringify(fields));
-    // still update locally so UI reflects the change
+  const {error}=await sb.from('words').update(fields).eq('id',id);
+  if(!error){
+    // update local words array
     const idx=words.findIndex(w=>w.id===id);
     if(idx>-1) Object.assign(words[idx],fields);
+    // also update reviewQueue entry so isDue() sees fresh data immediately
     const qi=reviewQueue.findIndex(w=>w.id===id);
     if(qi>-1) Object.assign(reviewQueue[qi],fields);
-    return false;
   }
-  // update from DB response (source of truth)
-  if(data){
-    const idx=words.findIndex(w=>w.id===id);
-    if(idx>-1) Object.assign(words[idx],data);
-    const qi=reviewQueue.findIndex(w=>w.id===id);
-    if(qi>-1) Object.assign(reviewQueue[qi],data);
-  }
-  return true;
 }
 
 // ── TTS helpers ───────────────────────────────────────────────
@@ -597,64 +571,44 @@ function renderScheduleSummary(){
 // ── Home ──────────────────────────────────────────────────────
 function renderHome(){
   const due=words.filter(w=>isDue(w));
-
-  // Empty state — no words yet
-  if(words.length===0){
-    $('main').innerHTML=`
-      <div class="empty-state">
-        <div class="empty-icon">📚</div>
-        <div class="empty-title">Start your vocabulary list</div>
-        <div class="empty-sub">Add your first word below to begin learning with spaced repetition.</div>
-      </div>
-      <div class="card">
-        <div class="section-tabs">
-          <button class="on" id="tab-single" onclick="switchAddTab('single')">Add word</button>
-          <button id="tab-import" onclick="switchAddTab('import')">Import Excel</button>
-        </div>
-        <div id="add-section-body"></div>
+  const wordItems=words.length===0
+    ?'<div class="empty">No words yet — add some below!</div>'
+    :words.map(w=>{
+      const due=isDue(w);
+      const daysLeft=w.next_review&&!due?daysUntil(w.next_review):0;
+      return `<div class="word-item">
+        <span><b>${w.word}</b> — <span class="muted">${w.meaning}</span></span>
+        <span class="word-actions">
+          <button class="play-btn" id="pb-${w.id}" onclick="speakWord('${w.word.replace(/'/g,"\\'")}','${w.language||selectedLang}','pb-${w.id}')">🔊</button>
+          ${w.language?`<span class="lang-badge">${langLabel(w.language)}</span>`:''}
+          ${due
+            ?`<span class="badge badge-warn">due</span>`
+            :w.done?`<span class="badge">done</span>`
+            :`<span class="badge">${daysLeft}d</span>`}
+          <span class="del-btn" onclick="deleteWord('${w.id}')">×</span>
+        </span>
       </div>`;
-    renderSingleAddTab();
-    return;
-  }
-
-  // Has words
-  const wordItems=words.map(w=>{
-    const d=isDue(w);
-    const daysLeft=w.next_review&&!d?daysUntil(w.next_review):0;
-    return `<div class="word-item">
-      <span><b>${w.word}</b> — <span class="muted">${w.meaning}</span></span>
-      <span class="word-actions">
-        <button class="play-btn" id="pb-${w.id}" onclick="speakWord('${w.word.replace(/'/g,"\'")}','${w.language||selectedLang}','pb-${w.id}')">🔊</button>
-        ${w.language?`<span class="lang-badge">${langLabel(w.language)}</span>`:''}
-        ${d?`<span class="badge badge-warn">due</span>`:w.done?`<span class="badge">done</span>`:`<span class="badge">${daysLeft}d</span>`}
-        <span class="del-btn" onclick="deleteWord('${w.id}')">×</span>
-      </span>
-    </div>`;
-  }).join('');
+    }).join('');
 
   $('main').innerHTML=`
     ${renderScheduleSummary()}
-    ${due.length>0?`
-      <button class="btn btn-primary btn-full review-cta" onclick="startReview()">
-        Review ${due.length} word${due.length!==1?'s':''} due today ↗
-      </button>`:''}
+    <div class="card">
+      <div class="section-tabs">
+        <button class="on" id="tab-single" onclick="switchAddTab('single')">Add word</button>
+        <button id="tab-import" onclick="switchAddTab('import')">Import Excel</button>
+      </div>
+      <div id="add-section-body"></div>
+    </div>
     <div class="card">
       <div class="card-title">Word list (${words.length})</div>
       <div class="word-list">${wordItems}</div>
     </div>
-    <details class="add-word-details">
-      <summary>+ Add / import words</summary>
-      <div class="add-word-inner">
-        <div class="section-tabs" style="margin-top:1rem">
-          <button class="on" id="tab-single" onclick="switchAddTab('single')">Add word</button>
-          <button id="tab-import" onclick="switchAddTab('import')">Import Excel</button>
-        </div>
-        <div id="add-section-body"></div>
-      </div>
-    </details>`;
+    ${due.length>0
+      ?`<button class="btn btn-primary btn-full" style="border-radius:10px;padding:12px;font-size:15px" onclick="startReview()">
+          Review ${due.length} word${due.length!==1?'s':''} due today ↗</button>`
+      :`<div class="no-due">${words.length===0?'Add words to start learning':'✓ Nothing due right now — come back later!'}</div>`}`;
   renderSingleAddTab();
 }
-
 
 function switchAddTab(tab){
   $('tab-single').className=tab==='single'?'on':'';
@@ -867,18 +821,7 @@ async function judge(correct){
   const w=reviewQueue[rIdx];
   const update=computeNextReview(w.section,correct);
   if(correct) stats.ok++; else stats.ng++;
-  const ok=await updateWord(w.id,update);
-  if(!ok){
-    // show visible error on card before moving on
-    const fc=document.getElementById('fc');
-    if(fc){
-      const err=document.createElement('div');
-      err.style.cssText='position:absolute;top:10px;left:10px;right:10px;background:#f5eaea;color:#a33030;font-size:12px;padding:6px 10px;border-radius:6px;z-index:10';
-      err.textContent='⚠ Could not save to database. Check Supabase connection.';
-      fc.appendChild(err);
-      await new Promise(r=>setTimeout(r,2500));
-    }
-  }
+  await updateWord(w.id,update);
   rIdx++;revealed=false;
   if(rIdx>=reviewQueue.length){ await fetchWords(); }
   renderBoxPills();renderReview();
