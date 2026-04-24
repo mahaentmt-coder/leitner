@@ -1,10 +1,18 @@
 export default async function handler(req, res) {
-  // Only allow POST
+  // CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { word, meaning, language } = req.body;
+  const { word, meaning, language } = req.body || {};
 
   if (!word || !meaning) {
     return res.status(400).json({ error: 'Missing word or meaning' });
@@ -12,7 +20,7 @@ export default async function handler(req, res) {
 
   const apiKey = process.env.ANTHROPIC_KEY;
   if (!apiKey) {
-    return res.status(500).json({ error: 'API key not configured' });
+    return res.status(500).json({ error: 'API key not configured on server' });
   }
 
   try {
@@ -28,19 +36,26 @@ export default async function handler(req, res) {
         max_tokens: 120,
         messages: [{
           role: 'user',
-          content: `Give one short, natural example sentence in ${language||'Dutch'} using the word "${word}" (meaning: ${meaning}). Reply in this exact format with nothing else:\nSENTENCE: <the sentence>\nTRANSLATION: <English translation>`
+          content: `Give one short, natural example sentence in ${language || 'Dutch'} using the word "${word}" (meaning: ${meaning}). Reply in this exact format with nothing else:\nSENTENCE: <the sentence>\nTRANSLATION: <English translation>`
         }]
       })
     });
 
+    // Log status for debugging
+    console.log('Anthropic API status:', response.status);
+
     if (response.status === 401 || response.status === 403) {
-      return res.status(402).json({ error: 'auth' });
+      const body = await response.text();
+      console.error('Auth error body:', body);
+      return res.status(402).json({ error: 'auth', detail: body });
     }
     if (response.status === 429) {
       return res.status(429).json({ error: 'limit' });
     }
     if (!response.ok) {
-      return res.status(500).json({ error: 'api' });
+      const body = await response.text();
+      console.error('API error body:', body);
+      return res.status(500).json({ error: 'api', detail: body });
     }
 
     const data = await response.json();
@@ -49,7 +64,7 @@ export default async function handler(req, res) {
     const transMatch = text.match(/TRANSLATION:\s*(.+)/);
 
     if (!sentMatch) {
-      return res.status(500).json({ error: 'parse' });
+      return res.status(500).json({ error: 'parse', raw: text });
     }
 
     return res.status(200).json({
@@ -58,6 +73,7 @@ export default async function handler(req, res) {
     });
 
   } catch (e) {
-    return res.status(500).json({ error: 'network' });
+    console.error('Fetch error:', e.message);
+    return res.status(500).json({ error: 'network', detail: e.message });
   }
 }
