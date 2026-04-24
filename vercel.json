@@ -1,0 +1,8 @@
+{
+  "functions": {
+    "api/sentence.js": {
+      "memory": 128,
+      "maxDuration": 10
+    }
+  }
+}

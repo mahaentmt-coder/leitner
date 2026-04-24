@@ -227,7 +227,6 @@
 </div>
 
 <script>
-const ANTHROPIC_KEY='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'; // ← replace with your key from console.anthropic.com
 const SUPABASE_URL='https://sudbjoqhzbtfttxqqbej.supabase.co';
 const SUPABASE_KEY='sb_publishable_SrRhyTEzPJd7dwfl9PU_sQ_DAKhkknT';
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -328,30 +327,17 @@ const sentenceCache={};
 async function fetchExampleSentence(word, meaning, lang){
   const key=word+'|'+lang;
   if(sentenceCache[key]) return sentenceCache[key];
-  if(!ANTHROPIC_KEY||ANTHROPIC_KEY==='YOUR_API_KEY_HERE'){
-    return {error:'no_key'};
-  }
   try{
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
+    const res=await fetch('/api/sentence',{
       method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':ANTHROPIC_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({
-        model:'claude-haiku-4-5-20251001',
-        max_tokens:120,
-        messages:[{role:'user',content:`Give one short, natural example sentence in ${lang} using the word "${word}" (meaning: ${meaning}). Reply in this exact format with nothing else:
-SENTENCE: <the sentence in ${lang}>
-TRANSLATION: <English translation>`}]
-      })
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({word, meaning, language:lang})
     });
-    if(res.status===401||res.status===403) return {error:'auth'};
-    if(res.status===429||res.status===529) return {error:'limit'};
+    if(res.status===402||res.status===401||res.status===403) return {error:'auth'};
+    if(res.status===429) return {error:'limit'};
     if(!res.ok) return {error:'api'};
-    const data=await res.json();
-    const text=data.content?.[0]?.text||'';
-    const sentMatch=text.match(/SENTENCE:\s*(.+)/);
-    const transMatch=text.match(/TRANSLATION:\s*(.+)/);
-    if(!sentMatch) return {error:'parse'};
-    const result={sentence:sentMatch[1].trim(),translation:transMatch?transMatch[1].trim():''};
+    const result=await res.json();
+    if(result.error) return result;
     sentenceCache[key]=result;
     return result;
   }catch(e){
