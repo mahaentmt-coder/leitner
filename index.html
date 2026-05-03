@@ -212,6 +212,21 @@
   .fc-sent-error { font-size:11px;color:var(--danger); }
   .fc-sent-sentence { font-size:14px;color:var(--text0);font-style:italic;margin-bottom:4px;line-height:1.5; }
   .fc-sent-translation { font-size:12px;color:var(--text2); }
+
+  /* ── Notification settings ── */
+  .notif-card { background:var(--card);border:0.5px solid var(--border0);border-radius:16px;padding:1.25rem;box-shadow:var(--shadow);margin-bottom:1rem; }
+  .notif-row { display:flex;align-items:center;justify-content:space-between;margin-bottom:12px; }
+  .notif-label { font-size:14px;color:var(--text0);font-weight:500; }
+  .notif-sub { font-size:12px;color:var(--text2);margin-top:2px; }
+  .time-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px; }
+  .time-btn { padding:8px 4px;border-radius:8px;border:0.5px solid var(--border0);background:var(--bg1);font-size:12px;font-weight:500;color:var(--text1);cursor:pointer;text-align:center;transition:all .15s; }
+  .time-btn:hover { border-color:var(--border1); }
+  .time-btn.on { background:var(--accent-bg);color:var(--accent);border-color:var(--accent-light); }
+  .notif-status { font-size:12px;padding:6px 10px;border-radius:6px;margin-top:8px; }
+  .notif-status.ok { background:var(--accent-bg);color:var(--accent); }
+  .notif-status.err { background:var(--danger-bg);color:var(--danger); }
+  .notif-icon-btn { position:relative; }
+  .notif-dot { position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--accent);display:none; }
 </style>
 </head>
 <body>
@@ -225,6 +240,9 @@
       <div class="profile-chip" id="profile-chip" style="display:none" onclick="showProfiles()">
         <div class="avatar" id="chip-avatar"></div>
         <span class="chip-name" id="chip-name"></span>
+      </div>
+      <div class="icon-btn notif-icon-btn" id="notif-btn" onclick="showNotifSettings()" title="Notification settings" style="display:none">
+        🔔<div class="notif-dot" id="notif-dot"></div>
       </div>
       <div class="icon-btn" id="install-btn" onclick="installApp()" style="display:none" title="Install app">⬇</div>
       <div class="icon-btn" id="theme-btn" onclick="toggleTheme()">☀</div>
@@ -994,6 +1012,142 @@ async function boot(){
   }
   showLogin();
 }
+
+// ── Push Notifications ────────────────────────────────────────
+const VAPID_PUBLIC = 'BEjr3TxP6Q2na9LV2szufucVlxDEoLZd7xvfZzD3Pj19IPaNNbaTC5X7bz8XqrqiSFFJDZpa2V2Sj-CxKbBuiVc';
+let pushSubscription = null;
+let notifHour = parseInt(localStorage.getItem('leitner_notif_hour') || '8');
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  return new Uint8Array([...raw].map(c => c.charCodeAt(0)));
+}
+
+async function initPush() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  // Show bell icon only if push is supported
+  const btn = document.getElementById('notif-btn');
+  if (btn) btn.style.display = 'flex';
+  // Check if already subscribed
+  const reg = await navigator.serviceWorker.ready;
+  pushSubscription = await reg.pushManager.getSubscription();
+  updateNotifDot();
+}
+
+function updateNotifDot() {
+  const dot = document.getElementById('notif-dot');
+  if (dot) dot.style.display = pushSubscription ? 'block' : 'none';
+}
+
+async function enableNotifications(hour) {
+  if (!profile) return { error: 'Not logged in' };
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') return { error: 'Permission denied' };
+    pushSubscription = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC)
+    });
+    const res = await fetch('/api/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ profile_id: profile.id, subscription: pushSubscription.toJSON(), reminder_hour: hour })
+    });
+    if (!res.ok) return { error: 'Server error' };
+    localStorage.setItem('leitner_notif_hour', hour);
+    notifHour = hour;
+    updateNotifDot();
+    return { ok: true };
+  } catch(e) {
+    return { error: e.message };
+  }
+}
+
+async function disableNotifications() {
+  if (!profile) return;
+  if (pushSubscription) {
+    await pushSubscription.unsubscribe();
+    pushSubscription = null;
+  }
+  await fetch('/api/subscribe', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ profile_id: profile.id })
+  });
+  updateNotifDot();
+}
+
+function showNotifSettings() {
+  const hours = [6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21];
+  const timeButtons = hours.map(h => {
+    const label = h < 12 ? `${h}:00 AM` : h === 12 ? '12:00 PM' : `${h-12}:00 PM`;
+    return `<div class="time-btn${h===notifHour?' on':''}" onclick="selectHour(${h})" id="tb-${h}">${label}</div>`;
+  }).join('');
+
+  $('main').innerHTML = `
+    <button class="back-link" onclick="renderHome();renderBoxPills()">← back</button>
+    <div class="notif-card">
+      <div class="card-title">🔔 Daily reminder</div>
+      <div class="notif-row">
+        <div>
+          <div class="notif-label">Enable notifications</div>
+          <div class="notif-sub">Get a daily reminder when words are due</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="notif-toggle" ${pushSubscription?'checked':''}
+            onchange="toggleNotif(this.checked)" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div id="time-picker" style="${pushSubscription?'':'opacity:.4;pointer-events:none'}">
+        <div class="notif-sub" style="margin-bottom:8px">Reminder time (Amsterdam)</div>
+        <div class="time-grid">${timeButtons}</div>
+      </div>
+      <div id="notif-msg"></div>
+    </div>`;
+}
+
+function selectHour(h) {
+  notifHour = h;
+  document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('on'));
+  const btn = document.getElementById('tb-' + h);
+  if (btn) btn.classList.add('on');
+  // Re-subscribe with new hour if already subscribed
+  if (pushSubscription) {
+    enableNotifications(h).then(r => {
+      const msg = document.getElementById('notif-msg');
+      if (msg) msg.innerHTML = r.ok
+        ? `<div class="notif-status ok">✓ Reminder set for ${h < 12 ? h+':00 AM' : h===12?'12:00 PM':(h-12)+':00 PM'}</div>`
+        : `<div class="notif-status err">⚠ ${r.error}</div>`;
+    });
+  }
+}
+
+async function toggleNotif(enabled) {
+  const picker = document.getElementById('time-picker');
+  const msg = document.getElementById('notif-msg');
+  if (enabled) {
+    if (picker) picker.style.cssText = '';
+    if (msg) msg.innerHTML = '<div class="notif-status ok">Enabling…</div>';
+    const r = await enableNotifications(notifHour);
+    if (msg) msg.innerHTML = r.ok
+      ? '<div class="notif-status ok">✓ Notifications enabled!</div>'
+      : `<div class="notif-status err">⚠ ${r.error}</div>`;
+    if (!r.ok) {
+      const toggle = document.getElementById('notif-toggle');
+      if (toggle) toggle.checked = false;
+      if (picker) picker.style.cssText = 'opacity:.4;pointer-events:none';
+    }
+  } else {
+    if (picker) picker.style.cssText = 'opacity:.4;pointer-events:none';
+    await disableNotifications();
+    if (msg) msg.innerHTML = '<div class="notif-status ok">Notifications disabled</div>';
+  }
+}
+
 // PWA install prompt
 let deferredPrompt = null;
 window.addEventListener('beforeinstallprompt', e => {
@@ -1022,7 +1176,7 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-boot();
+boot().then(() => initPush());
 </script>
 </body>
 </html>

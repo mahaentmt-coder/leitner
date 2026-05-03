@@ -3,6 +3,20 @@
     "api/sentence.js": {
       "memory": 128,
       "maxDuration": 10
+    },
+    "api/notify.js": {
+      "memory": 128,
+      "maxDuration": 30
+    },
+    "api/subscribe.js": {
+      "memory": 128,
+      "maxDuration": 10
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/notify",
+      "schedule": "0 * * * *"
+    }
+  ]
 }
