@@ -144,7 +144,7 @@
   .avatar-lg { width:40px;height:40px;border-radius:50%;background:var(--accent-bg);color:var(--accent);font-size:15px;font-weight:500;display:flex;align-items:center;justify-content:center; }
   .profile-name { font-size:15px;font-weight:500;color:var(--text0); }
 
-  .login-wrap { max-width:400px;margin:3rem auto 0;text-align:center; }
+  .login-wrap { max-width:400px;margin:1rem auto 0;text-align:center; }
   .login-title { font-family:'DM Serif Display',serif;font-size:32px;color:var(--text0);margin-bottom:.5rem; }
   .login-sub { font-size:14px;color:var(--text1);margin-bottom:2rem; }
   .login-card { background:var(--card);border:0.5px solid var(--border0);border-radius:16px;padding:1.5rem;box-shadow:var(--shadow);text-align:left; }
@@ -1141,12 +1141,6 @@ async function disableNotifications() {
 }
 
 function showNotifSettings() {
-  const hours = [6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21];
-  const timeButtons = hours.map(h => {
-    const label = h < 12 ? `${h}:00 AM` : h === 12 ? '12:00 PM' : `${h-12}:00 PM`;
-    return `<div class="time-btn${h===notifHour?' on':''}" onclick="selectHour(${h})" id="tb-${h}">${label}</div>`;
-  }).join('');
-
   $('main').innerHTML = `
     <button class="back-link" onclick="renderHome();renderBoxPills()">← back</button>
     <div class="notif-card">
@@ -1154,7 +1148,7 @@ function showNotifSettings() {
       <div class="notif-row">
         <div>
           <div class="notif-label">Enable notifications</div>
-          <div class="notif-sub">Get a daily reminder when words are due</div>
+          <div class="notif-sub">Get a daily reminder at 8 AM when words are due</div>
         </div>
         <label class="toggle-switch">
           <input type="checkbox" id="notif-toggle" ${pushSubscription?'checked':''}
@@ -1162,47 +1156,23 @@ function showNotifSettings() {
           <span class="toggle-slider"></span>
         </label>
       </div>
-      <div id="time-picker" style="${pushSubscription?'':'opacity:.4;pointer-events:none'}">
-        <div class="notif-sub" style="margin-bottom:8px">Reminder time (Amsterdam)</div>
-        <div class="time-grid">${timeButtons}</div>
-      </div>
       <div id="notif-msg"></div>
     </div>`;
 }
 
-function selectHour(h) {
-  notifHour = h;
-  document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('on'));
-  const btn = document.getElementById('tb-' + h);
-  if (btn) btn.classList.add('on');
-  // Re-subscribe with new hour if already subscribed
-  if (pushSubscription) {
-    enableNotifications(h).then(r => {
-      const msg = document.getElementById('notif-msg');
-      if (msg) msg.innerHTML = r.ok
-        ? `<div class="notif-status ok">✓ Reminder set for ${h < 12 ? h+':00 AM' : h===12?'12:00 PM':(h-12)+':00 PM'}</div>`
-        : `<div class="notif-status err">⚠ ${r.error}</div>`;
-    });
-  }
-}
-
 async function toggleNotif(enabled) {
-  const picker = document.getElementById('time-picker');
   const msg = document.getElementById('notif-msg');
   if (enabled) {
-    if (picker) picker.style.cssText = '';
     if (msg) msg.innerHTML = '<div class="notif-status ok">Enabling…</div>';
-    const r = await enableNotifications(notifHour);
+    const r = await enableNotifications(8);
     if (msg) msg.innerHTML = r.ok
-      ? '<div class="notif-status ok">✓ Notifications enabled!</div>'
+      ? '<div class="notif-status ok">✓ Notifications enabled — daily at 8 AM</div>'
       : `<div class="notif-status err">⚠ ${r.error}</div>`;
     if (!r.ok) {
       const toggle = document.getElementById('notif-toggle');
       if (toggle) toggle.checked = false;
-      if (picker) picker.style.cssText = 'opacity:.4;pointer-events:none';
     }
   } else {
-    if (picker) picker.style.cssText = 'opacity:.4;pointer-events:none';
     await disableNotifications();
     if (msg) msg.innerHTML = '<div class="notif-status ok">Notifications disabled</div>';
   }
