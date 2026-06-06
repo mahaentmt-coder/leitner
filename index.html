@@ -388,10 +388,16 @@ function ttsAvailable(lang){
 }
 
 function speak(text, lang, onEnd){
+  // Android native TTS bridge (most reliable in Capacitor WebView)
+  if(isNative() && window.AndroidTTS){
+    window.AndroidTTS.speak(text, lang||'nl-NL');
+    if(onEnd) setTimeout(onEnd, Math.max(1000, text.length * 80));
+    return;
+  }
+  // Web SpeechSynthesis fallback
   if(!window.speechSynthesis){ if(onEnd) onEnd(); return; }
   const utt=new SpeechSynthesisUtterance(text);
-  utt.lang=lang||'nl-NL';
-  utt.rate=0.9;
+  utt.lang=lang||'nl-NL'; utt.rate=0.9;
   utt.onend=onEnd||null;
   utt.onerror=()=>{ if(onEnd) onEnd(); };
   window.speechSynthesis.cancel();
@@ -399,7 +405,7 @@ function speak(text, lang, onEnd){
 }
 
 function stopSpeech(){
-  try{ if(isNative()&&Capacitor.Plugins.TextToSpeech) Capacitor.Plugins.TextToSpeech.stop(); }catch(e){}
+  if(isNative() && window.AndroidTTS){ window.AndroidTTS.stop(); return; }
   if(window.speechSynthesis) window.speechSynthesis.cancel();
 }
 
