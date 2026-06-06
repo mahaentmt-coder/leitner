@@ -387,38 +387,19 @@ function ttsAvailable(lang){
   return voices.some(v=>v.lang.startsWith(lang.split('-')[0]));
 }
 
-async function speak(text, lang, onEnd){
-  // Try native TTS plugin first
-  if(isNative()){
-    try{
-      const { TextToSpeech } = Capacitor.Plugins;
-      if(TextToSpeech){
-        await TextToSpeech.speak({ text, lang: lang||'nl-NL', rate: 0.9, pitch: 1.0, volume: 1.0 });
-        if(onEnd) onEnd();
-        return;
-      }
-    }catch(e){ console.warn('Native TTS unavailable, trying web speech:', e.message); }
-  }
-
-  // Web SpeechSynthesis (also fallback on Android if plugin missing)
+function speak(text, lang, onEnd){
   if(!window.speechSynthesis){ if(onEnd) onEnd(); return; }
-  const doSpeak=()=>{
-    const utt=new SpeechSynthesisUtterance(text);
-    utt.lang=lang||'nl-NL'; utt.rate=0.9;
-    const voices=window.speechSynthesis.getVoices();
-    const match=voices.find(v=>v.lang===lang)||voices.find(v=>v.lang.startsWith((lang||'nl').split('-')[0]));
-    if(match) utt.voice=match;
-    utt.onend=onEnd||null;
-    utt.onerror=()=>{ if(onEnd) onEnd(); };
-    window.speechSynthesis.resume(); // required on Android WebView
-    window.speechSynthesis.speak(utt);
-  };
-  if(window.speechSynthesis.speaking) window.speechSynthesis.cancel();
-  setTimeout(doSpeak, 50);
+  const utt=new SpeechSynthesisUtterance(text);
+  utt.lang=lang||'nl-NL';
+  utt.rate=0.9;
+  utt.onend=onEnd||null;
+  utt.onerror=()=>{ if(onEnd) onEnd(); };
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(utt);
 }
 
 function stopSpeech(){
-  if(isNative()){ try{ Capacitor.Plugins.TextToSpeech?.stop(); }catch(e){} }
+  try{ if(isNative()&&Capacitor.Plugins.TextToSpeech) Capacitor.Plugins.TextToSpeech.stop(); }catch(e){}
   if(window.speechSynthesis) window.speechSynthesis.cancel();
 }
 
