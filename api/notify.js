@@ -34,17 +34,13 @@ export default async function handler(req, res) {
   const { createClient } = await import('@supabase/supabase-js');
   const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
-  const nowAmsterdam = new Date().toLocaleString('en-US', { timeZone: 'Europe/Amsterdam' });
-  const currentHour = new Date(nowAmsterdam).getHours();
   const today = new Date().toISOString().slice(0, 10);
-
   let sent = 0, failed = 0;
 
   // ── Web push ──────────────────────────────────────────────────────────
   const { data: webSubs, error: webErr } = await sb
     .from('push_subscriptions')
-    .select('*, profiles(username)')
-    .eq('reminder_hour', currentHour);
+    .select('*, profiles(username)');
 
   if (!webErr && webSubs?.length) {
     for (const sub of webSubs) {
@@ -84,8 +80,7 @@ export default async function handler(req, res) {
   if (messaging) {
     const { data: fcmSubs, error: fcmErr } = await sb
       .from('fcm_tokens')
-      .select('*, profiles(username)')
-      .eq('reminder_hour', currentHour);
+      .select('*, profiles(username)');
 
     if (!fcmErr && fcmSubs?.length) {
       for (const sub of fcmSubs) {

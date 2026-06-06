@@ -6,6 +6,6 @@
     "api/subscribe-fcm.js": { "memory": 128, "maxDuration": 10 }
   },
   "crons": [
-    { "path": "/api/notify", "schedule": "0 * * * *" }
+    { "path": "/api/notify", "schedule": "0 7 * * *" }
   ]
 }
