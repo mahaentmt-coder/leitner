@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "160609467320",
+    "project_id": "leitner-ae333",
+    "storage_bucket": "leitner-ae333.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:160609467320:android:8afe028de73b6e1bdded4d",
+        "android_client_info": {
+          "package_name": "com.leitner.flashcards"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDvqqj2vSHF15cegjRfVb_OjoJKCX_h67c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

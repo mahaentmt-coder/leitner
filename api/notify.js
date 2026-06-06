@@ -6,8 +6,27 @@ webpush.setVapidDetails(
   process.env.VAPID_PRIVATE_KEY
 );
 
+// Lazily initialize Firebase Admin only if service account is configured
+let firebaseApp = null;
+async function getMessaging() {
+  if (!process.env.FIREBASE_SERVICE_ACCOUNT_B64) return null;
+  if (!firebaseApp) {
+    const admin = (await import('firebase-admin')).default;
+    if (!admin.apps.length) {
+      const serviceAccount = JSON.parse(
+        Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_B64, 'base64').toString('utf8')
+      );
+      firebaseApp = admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+    } else {
+      firebaseApp = admin.app();
+    }
+    return admin.messaging();
+  }
+  const admin = (await import('firebase-admin')).default;
+  return admin.messaging();
+}
+
 export default async function handler(req, res) {
-  // Allow manual trigger via POST, or cron via GET
   if (req.method !== 'GET' && req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -15,61 +34,93 @@ export default async function handler(req, res) {
   const { createClient } = await import('@supabase/supabase-js');
   const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
-  // Get current hour in Amsterdam time
   const nowAmsterdam = new Date().toLocaleString('en-US', { timeZone: 'Europe/Amsterdam' });
   const currentHour = new Date(nowAmsterdam).getHours();
+  const today = new Date().toISOString().slice(0, 10);
 
-  // Get all subscriptions matching the current hour
-  const { data: subs, error: subError } = await sb
+  let sent = 0, failed = 0;
+
+  // ── Web push ──────────────────────────────────────────────────────────
+  const { data: webSubs, error: webErr } = await sb
     .from('push_subscriptions')
     .select('*, profiles(username)')
     .eq('reminder_hour', currentHour);
 
-  if (subError) return res.status(500).json({ error: subError.message });
-  if (!subs || subs.length === 0) return res.status(200).json({ sent: 0, message: 'No subscriptions for this hour' });
+  if (!webErr && webSubs?.length) {
+    for (const sub of webSubs) {
+      const { data: dueWords } = await sb
+        .from('words').select('id').eq('profile_id', sub.profile_id)
+        .eq('done', false).lte('next_review', today).limit(1);
+      if (!dueWords?.length) continue;
 
-  const today = new Date().toISOString().slice(0, 10);
-  let sent = 0, failed = 0;
+      const { count } = await sb
+        .from('words').select('id', { count: 'exact', head: true })
+        .eq('profile_id', sub.profile_id).eq('done', false).lte('next_review', today);
 
-  for (const sub of subs) {
-    // Check if user has words due today
-    const { data: dueWords } = await sb
-      .from('words')
-      .select('id')
-      .eq('profile_id', sub.profile_id)
-      .eq('done', false)
-      .lte('next_review', today)
-      .limit(1);
+      const username = sub.profiles?.username || 'there';
+      const payload = JSON.stringify({
+        title: 'Leitner — Time to review! 📚',
+        body: `Hi ${username}! You have ${count} word${count !== 1 ? 's' : ''} due for review today.`,
+        icon: '/icons/icon-192.png',
+        badge: '/icons/icon-192.png',
+        url: '/'
+      });
 
-    if (!dueWords || dueWords.length === 0) continue;
-
-    // Count total due
-    const { count } = await sb
-      .from('words')
-      .select('id', { count: 'exact', head: true })
-      .eq('profile_id', sub.profile_id)
-      .eq('done', false)
-      .lte('next_review', today);
-
-    const username = sub.profiles?.username || 'there';
-    const payload = JSON.stringify({
-      title: 'Leitner — Time to review! 📚',
-      body: `Hi ${username}! You have ${count} word${count !== 1 ? 's' : ''} due for review today.`,
-      icon: '/icons/icon-192.png',
-      badge: '/icons/icon-192.png',
-      url: '/'
-    });
-
-    try {
-      await webpush.sendNotification(sub.subscription, payload);
-      sent++;
-    } catch (e) {
-      console.error('Push failed for', sub.profile_id, e.message);
-      // If subscription expired, remove it
-      if (e.statusCode === 410) {
-        await sb.from('push_subscriptions').delete().eq('profile_id', sub.profile_id);
+      try {
+        await webpush.sendNotification(sub.subscription, payload);
+        sent++;
+      } catch (e) {
+        console.error('Web push failed for', sub.profile_id, e.message);
+        if (e.statusCode === 410) {
+          await sb.from('push_subscriptions').delete().eq('profile_id', sub.profile_id);
+        }
+        failed++;
       }
-      failed++;
+    }
+  }
+
+  // ── FCM (Android) ─────────────────────────────────────────────────────
+  const messaging = await getMessaging();
+  if (messaging) {
+    const { data: fcmSubs, error: fcmErr } = await sb
+      .from('fcm_tokens')
+      .select('*, profiles(username)')
+      .eq('reminder_hour', currentHour);
+
+    if (!fcmErr && fcmSubs?.length) {
+      for (const sub of fcmSubs) {
+        const { data: dueWords } = await sb
+          .from('words').select('id').eq('profile_id', sub.profile_id)
+          .eq('done', false).lte('next_review', today).limit(1);
+        if (!dueWords?.length) continue;
+
+        const { count } = await sb
+          .from('words').select('id', { count: 'exact', head: true })
+          .eq('profile_id', sub.profile_id).eq('done', false).lte('next_review', today);
+
+        const username = sub.profiles?.username || 'there';
+        try {
+          await messaging.send({
+            token: sub.fcm_token,
+            notification: {
+              title: 'Leitner — Time to review! 📚',
+              body: `Hi ${username}! You have ${count} word${count !== 1 ? 's' : ''} due today.`
+            },
+            android: {
+              priority: 'high',
+              notification: { sound: 'default', channelId: 'leitner_reminders' }
+            }
+          });
+          sent++;
+        } catch (e) {
+          console.error('FCM failed for', sub.profile_id, e.message);
+          // Remove stale token
+          if (e.code === 'messaging/registration-token-not-registered') {
+            await sb.from('fcm_tokens').delete().eq('profile_id', sub.profile_id);
+          }
+          failed++;
+        }
+      }
     }
   }
 
