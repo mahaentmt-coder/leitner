@@ -388,7 +388,7 @@ function ttsAvailable(lang){
 }
 
 async function speak(text, lang, onEnd){
-  // Native Android: use Capacitor TTS plugin
+  // Try native TTS plugin first
   if(isNative()){
     try{
       const { TextToSpeech } = Capacitor.Plugins;
@@ -397,10 +397,10 @@ async function speak(text, lang, onEnd){
         if(onEnd) onEnd();
         return;
       }
-    }catch(e){ console.error('Native TTS error:', e); if(onEnd) onEnd(); return; }
+    }catch(e){ console.warn('Native TTS unavailable, trying web speech:', e.message); }
   }
 
-  // Web: SpeechSynthesis
+  // Web SpeechSynthesis (also fallback on Android if plugin missing)
   if(!window.speechSynthesis){ if(onEnd) onEnd(); return; }
   const doSpeak=()=>{
     const utt=new SpeechSynthesisUtterance(text);
@@ -408,16 +408,17 @@ async function speak(text, lang, onEnd){
     const voices=window.speechSynthesis.getVoices();
     const match=voices.find(v=>v.lang===lang)||voices.find(v=>v.lang.startsWith((lang||'nl').split('-')[0]));
     if(match) utt.voice=match;
-    utt.onend=onEnd||null; utt.onerror=onEnd||null;
+    utt.onend=onEnd||null;
+    utt.onerror=()=>{ if(onEnd) onEnd(); };
+    window.speechSynthesis.resume(); // required on Android WebView
     window.speechSynthesis.speak(utt);
   };
-  // Small delay after cancel prevents iOS from getting stuck
   if(window.speechSynthesis.speaking) window.speechSynthesis.cancel();
   setTimeout(doSpeak, 50);
 }
 
 function stopSpeech(){
-  if(isNative()){ try{ Capacitor.Plugins.TextToSpeech?.stop(); }catch(e){} return; }
+  if(isNative()){ try{ Capacitor.Plugins.TextToSpeech?.stop(); }catch(e){} }
   if(window.speechSynthesis) window.speechSynthesis.cancel();
 }
 
