@@ -119,5 +119,5 @@ export default async function handler(req, res) {
     }
   }
 
-  return res.status(200).json({ sent, failed, hour: currentHour });
+  return res.status(200).json({ sent, failed, today });
 }
