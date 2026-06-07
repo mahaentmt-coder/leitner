@@ -14,7 +14,7 @@ async function getMessaging() {
     const admin = (await import('firebase-admin')).default;
     if (!admin.apps.length) {
       const serviceAccount = JSON.parse(
-        Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_B64, 'base64').toString('utf8')
+        Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_B64.replace(/\s+/g, ''), 'base64').toString('utf8')
       );
       firebaseApp = admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
     } else {
