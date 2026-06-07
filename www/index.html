@@ -355,14 +355,14 @@ function computeNextReview(currentSection, correct){
 // ── Dutch sentence generator ─────────────────────────────────
 const sentenceCache={};
 
-async function fetchExampleSentence(word, meaning, lang){
+async function fetchExampleSentence(word, meaning, lang, word_id){
   const key=word+'|'+lang;
   if(sentenceCache[key]) return sentenceCache[key];
   try{
     const res=await fetch(BASE_URL+'/api/sentence',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({word, meaning, language:lang})
+      body:JSON.stringify({word, meaning, language:lang, word_id})
     });
     const result=await res.json().catch(()=>({error:'parse'}));
     console.log('Sentence API response:', res.status, result);
@@ -939,7 +939,7 @@ function revealCard(){
   if(box){
     box.style.display='block';
     box.innerHTML='<span class="fc-sent-loading">Generating example sentence…</span>';
-    fetchExampleSentence(w.word, w.meaning, w.language||'Dutch').then(result=>{
+    fetchExampleSentence(w.word, w.meaning, w.language||'Dutch', w.id).then(result=>{
       if(!box) return;
       if(result.error==='no_key'){
         box.style.display='none';
