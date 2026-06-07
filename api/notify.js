@@ -9,13 +9,25 @@ webpush.setVapidDetails(
 // Lazily initialize Firebase Admin only if service account is configured
 let firebaseApp = null;
 async function getMessaging() {
-  if (!process.env.FIREBASE_SERVICE_ACCOUNT_B64) return null;
+  const hasB64 = !!process.env.FIREBASE_SERVICE_ACCOUNT_B64;
+  const hasFields = !!(process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY);
+  if (!hasB64 && !hasFields) return null;
+
   if (!firebaseApp) {
     const admin = (await import('firebase-admin')).default;
     if (!admin.apps.length) {
-      const serviceAccount = JSON.parse(
-        Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_B64.replace(/\s+/g, ''), 'base64').toString('utf8')
-      );
+      let serviceAccount;
+      if (hasFields) {
+        serviceAccount = {
+          projectId: process.env.FIREBASE_PROJECT_ID,
+          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+          privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
+        };
+      } else {
+        serviceAccount = JSON.parse(
+          Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_B64.replace(/\s+/g, ''), 'base64').toString('utf8')
+        );
+      }
       firebaseApp = admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
     } else {
       firebaseApp = admin.app();
