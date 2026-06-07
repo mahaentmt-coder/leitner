@@ -1067,9 +1067,7 @@ async function initPush() {
     setupFcmListeners();
     const result = await Push.checkPermissions();
     if (result.receive === 'granted') {
-      await Push.register();
-    } else if (localStorage.getItem('leitner_fcm_enabled') === 'true') {
-      pushSubscription = { type: 'fcm' };
+      await Push.register(); // always re-register to ensure token is saved to DB
     }
     updateNotifDot();
     return;
