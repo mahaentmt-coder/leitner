@@ -306,7 +306,7 @@ function addDays(dateStr, days){
 }
 
 function nextReviewDate(section, correct){
-  if(!correct) return today(); // wrong → due again today
+  if(!correct) return addDays(today(), 1); // wrong → due tomorrow
   const box=getBoxNum(section+1); // box after promotion
   const interval=BOX_INTERVALS[Math.min(box-1, BOX_INTERVALS.length-1)];
   if(interval===0) return null; // retired
@@ -339,8 +339,8 @@ function getBoxNum(s){ let c=0; for(let i=0;i<BOX_SIZES.length;i++){c+=BOX_SIZES
 
 function computeNextReview(currentSection, correct){
   if(!correct){
-    // Wrong: reset to section 1, due today
-    return { section: 1, done: false, next_review: today() };
+    // Wrong: reset to section 1, due tomorrow (not same day)
+    return { section: 1, done: false, next_review: addDays(today(), 1) };
   }
   const newSection = currentSection===31 ? 31 : currentSection+1;
   const done = newSection===31 && currentSection===31 ? false : (newSection===31 ? false : false);
