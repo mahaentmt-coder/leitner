@@ -47,7 +47,7 @@ export default async function handler(req, res) {
   const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 
   const today = new Date().toISOString().slice(0, 10);
-  let sent = 0, failed = 0;
+  let sent = 0, failed = 0, errors = [];
 
   // ── Web push ──────────────────────────────────────────────────────────
   const { data: webSubs, error: webErr } = await sb
@@ -121,7 +121,7 @@ export default async function handler(req, res) {
           sent++;
         } catch (e) {
           console.error('FCM failed for', sub.profile_id, e.message);
-          // Remove stale token
+          errors.push({ profile_id: sub.profile_id, code: e.code, message: e.message });
           if (e.code === 'messaging/registration-token-not-registered') {
             await sb.from('fcm_tokens').delete().eq('profile_id', sub.profile_id);
           }
@@ -131,5 +131,5 @@ export default async function handler(req, res) {
     }
   }
 
-  return res.status(200).json({ sent, failed, today });
+  return res.status(200).json({ sent, failed, today, errors });
 }
