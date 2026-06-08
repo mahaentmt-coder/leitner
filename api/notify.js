@@ -14,31 +14,29 @@ async function getMessaging() {
   const hasFields = !!(process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY);
   if (!hasJson && !hasB64 && !hasFields) return null;
 
-  if (!firebaseApp) {
-    const admin = (await import('firebase-admin')).default;
-    if (!admin.apps.length) {
-      let serviceAccount;
-      if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
-        serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
-      } else if (hasFields) {
-        serviceAccount = {
-          projectId: process.env.FIREBASE_PROJECT_ID,
-          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-          privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
-        };
-      } else {
-        serviceAccount = JSON.parse(
-          Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_B64.replace(/\s+/g, ''), 'base64').toString('utf8')
-        );
-      }
-      firebaseApp = admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
-    } else {
-      firebaseApp = admin.app();
-    }
-    return admin.messaging();
-  }
   const admin = (await import('firebase-admin')).default;
-  return admin.messaging();
+  const { getMessaging: fcmGetMessaging } = await import('firebase-admin/messaging');
+
+  if (!admin.apps.length) {
+    let serviceAccount;
+    if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
+      serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+    } else if (hasFields) {
+      serviceAccount = {
+        projectId: process.env.FIREBASE_PROJECT_ID,
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
+      };
+    } else {
+      serviceAccount = JSON.parse(
+        Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_B64.replace(/\s+/g, ''), 'base64').toString('utf8')
+      );
+    }
+    firebaseApp = admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+  } else {
+    firebaseApp = admin.app();
+  }
+  return fcmGetMessaging(firebaseApp);
 }
 
 export default async function handler(req, res) {
