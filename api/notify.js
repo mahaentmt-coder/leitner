@@ -17,6 +17,7 @@ async function getMessaging() {
   const admin = (await import('firebase-admin')).default;
   const { getMessaging: fcmGetMessaging } = await import('firebase-admin/messaging');
 
+  const credPath = process.env.FIREBASE_SERVICE_ACCOUNT_JSON ? 'json' : hasFields ? 'fields' : 'b64';
   if (!admin.apps.length) {
     let serviceAccount;
     if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
@@ -122,7 +123,7 @@ export default async function handler(req, res) {
           sent++;
         } catch (e) {
           console.error('FCM failed for', sub.profile_id, e.message);
-          errors.push({ profile_id: sub.profile_id, code: e.code, message: e.message });
+          errors.push({ profile_id: sub.profile_id, code: e.code, message: e.message, credPath });
           if (e.code === 'messaging/registration-token-not-registered') {
             await sb.from('fcm_tokens').delete().eq('profile_id', sub.profile_id);
           }
