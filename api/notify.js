@@ -9,15 +9,18 @@ webpush.setVapidDetails(
 // Lazily initialize Firebase Admin only if service account is configured
 let firebaseApp = null;
 async function getMessaging() {
+  const hasJson = !!process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
   const hasB64 = !!process.env.FIREBASE_SERVICE_ACCOUNT_B64;
   const hasFields = !!(process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY);
-  if (!hasB64 && !hasFields) return null;
+  if (!hasJson && !hasB64 && !hasFields) return null;
 
   if (!firebaseApp) {
     const admin = (await import('firebase-admin')).default;
     if (!admin.apps.length) {
       let serviceAccount;
-      if (hasFields) {
+      if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
+        serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+      } else if (hasFields) {
         serviceAccount = {
           projectId: process.env.FIREBASE_PROJECT_ID,
           clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
