@@ -208,6 +208,38 @@ test('word travels box 1→2→3→4→5 with correct answers', () => {
   expect(journey).toEqual([2, 3, 4, 5]);
 });
 
+test('word reaches box 5 in 30 days with 4 correct answers', () => {
+  // Day 0: start in box 1
+  let currentDate = TODAY;
+  let word = { section: 1, next_review: TODAY, done: false };
+
+  // Review 1 — correct in box 1 → box 2, due in 2 days (day 2)
+  let update = computeNextReview(word.section, true, currentDate);
+  Object.assign(word, update);
+  expect(getBoxNum(word.section)).toBe(2);
+  currentDate = word.next_review; // day 2
+
+  // Review 2 — correct in box 2 → box 3, due in 4 days (day 6)
+  update = computeNextReview(word.section, true, currentDate);
+  Object.assign(word, update);
+  expect(getBoxNum(word.section)).toBe(3);
+  currentDate = word.next_review; // day 6
+
+  // Review 3 — correct in box 3 → box 4, due in 8 days (day 14)
+  update = computeNextReview(word.section, true, currentDate);
+  Object.assign(word, update);
+  expect(getBoxNum(word.section)).toBe(4);
+  currentDate = word.next_review; // day 14
+
+  // Review 4 — correct in box 4 → box 5, due in 16 days (day 30)
+  update = computeNextReview(word.section, true, currentDate);
+  Object.assign(word, update);
+  expect(getBoxNum(word.section)).toBe(5);
+
+  // Total elapsed = 2 + 4 + 8 + 16 = 30 days
+  expect(word.next_review).toBe(addDays(TODAY, 30));
+});
+
 test('wrong answer mid-journey resets to box 1', () => {
   let word = { section: 3, next_review: TODAY, done: false };
   const update = computeNextReview(word.section, false, TODAY);
