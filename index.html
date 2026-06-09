@@ -356,7 +356,7 @@ function computeNextReview(currentSection, correct){
 const sentenceCache={};
 
 async function fetchExampleSentence(word, meaning, lang, word_id){
-  const key=word+'|'+lang;
+  const key=word_id||word+'|'+lang;
   if(sentenceCache[key]) return sentenceCache[key];
   try{
     const res=await fetch(BASE_URL+'/api/sentence',{
