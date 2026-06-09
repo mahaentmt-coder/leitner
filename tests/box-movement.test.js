@@ -115,24 +115,24 @@ test('box 5 correct → stays in box 5 (section increments)', () => {
 // ── Correct answer intervals ──────────────────────────────────────
 console.log('\n⏱  Correct answer — next_review intervals:');
 
-test('box 1 correct → next review in 1 day', () => {
+test('box 1 correct → moves to box 2 → next review in 2 days', () => {
   const result = computeNextReview(1, true, TODAY);
-  expect(result.next_review).toBe(addDays(TODAY, 1));
+  expect(result.next_review).toBe(addDays(TODAY, 2)); // now in box 2, interval = 2
 });
 
-test('box 2 correct → next review in 2 days', () => {
+test('box 2 correct → moves to box 3 → next review in 4 days', () => {
   const result = computeNextReview(2, true, TODAY);
-  expect(result.next_review).toBe(addDays(TODAY, 2));
+  expect(result.next_review).toBe(addDays(TODAY, 4)); // now in box 3, interval = 4
 });
 
-test('box 3 correct → next review in 4 days', () => {
+test('box 3 correct → moves to box 4 → next review in 8 days', () => {
   const result = computeNextReview(3, true, TODAY);
-  expect(result.next_review).toBe(addDays(TODAY, 4));
+  expect(result.next_review).toBe(addDays(TODAY, 8)); // now in box 4, interval = 8
 });
 
-test('box 4 correct → next review in 8 days', () => {
+test('box 4 correct → moves to box 5 → next review in 16 days', () => {
   const result = computeNextReview(4, true, TODAY);
-  expect(result.next_review).toBe(addDays(TODAY, 8));
+  expect(result.next_review).toBe(addDays(TODAY, 16)); // now in box 5, interval = 16
 });
 
 test('box 5 correct → next review in 16 days', () => {
