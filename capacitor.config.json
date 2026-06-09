@@ -3,7 +3,9 @@
   "appName": "Leitner",
   "webDir": "www",
   "server": {
-    "androidScheme": "https"
+    "androidScheme": "https",
+    "url": "https://leitner-six.vercel.app",
+    "cleartext": false
   },
   "plugins": {
     "PushNotifications": {
