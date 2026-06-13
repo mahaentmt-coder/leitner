@@ -763,6 +763,27 @@ function renderSingleAddTab(){
     </div>`;
   $('inp-word').addEventListener('keydown',e=>e.key==='Enter'&&$('inp-meaning').focus());
   $('inp-meaning').addEventListener('keydown',e=>e.key==='Enter'&&addWord());
+
+  let _lookupTimer=null;
+  $('inp-word').addEventListener('input',()=>{
+    clearTimeout(_lookupTimer);
+    const word=$('inp-word').value.trim();
+    if(!word||$('inp-meaning').value.trim()) return; // don't overwrite existing meaning
+    _lookupTimer=setTimeout(async()=>{
+      const langCode=(selectedLang||'nl-NL').split('-')[0]; // nl-NL → nl
+      const meaningEl=$('inp-meaning');
+      meaningEl.placeholder='Looking up…';
+      try{
+        const r=await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=${langCode}|en`);
+        const d=await r.json();
+        const match=d?.responseData?.translatedText;
+        if(match&&match.toLowerCase()!==word.toLowerCase()&&$('inp-meaning').value.trim()===''){
+          meaningEl.value=match;
+        }
+      }catch(_){}
+      meaningEl.placeholder='Meaning / translation';
+    },600);
+  });
 }
 
 function changeLang(val){
