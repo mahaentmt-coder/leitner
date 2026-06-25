@@ -206,6 +206,18 @@
   .add-word-details[open] summary { color:var(--text0); }
   .add-word-inner { background:var(--card);border:0.5px solid var(--border0);border-radius:16px;padding:1.25rem;box-shadow:var(--shadow); }
 
+  /* ── Conjugation table on flashcard ── */
+  .conj-details { width:100%;margin-top:6px;border-radius:10px;border:0.5px solid var(--border0);background:var(--bg1);overflow:hidden; }
+  .conj-details summary { padding:8px 14px;font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;list-style:none;user-select:none; }
+  .conj-details summary::-webkit-details-marker { display:none; }
+  .conj-details[open] summary { border-bottom:0.5px solid var(--border0); }
+  .conj-grid { display:grid;grid-template-columns:repeat(2,1fr);gap:0;padding:8px; }
+  .conj-tense { padding:6px 8px; }
+  .conj-tense-title { font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--accent);margin-bottom:4px; }
+  .conj-row { display:flex;gap:6px;font-size:12px;line-height:1.7; }
+  .conj-pronoun { color:var(--text2);min-width:42px; }
+  .conj-form { color:var(--text0);font-weight:500; }
+
   /* ── Example sentence on flashcard ── */
   .fc-sentence { width:100%;margin-top:4px;padding:10px 14px;background:var(--bg1);border-radius:10px;text-align:left;border:0.5px solid var(--border0); }
   .fc-sent-loading { font-size:12px;color:var(--text2);font-style:italic; }
@@ -555,6 +567,32 @@ async function fetchWords(){
   words=data||[];
 }
 
+function looksLikeVerb(w){
+  const lower=w.toLowerCase().trim();
+  // Words with articles are nouns
+  if(/^(de |het |een )/.test(lower)) return false;
+  // Phrases (spaces) are not bare infinitives
+  if(lower.includes(' ')) return false;
+  // Must end in -en and be long enough
+  if(!lower.endsWith('en') || lower.length<=3) return false;
+  // Irregular verbs that end in -en but are already known
+  const nonVerbs=['zijn','hebben','worden','kunnen','mogen','willen','zullen','moeten','blijven','laten','gaan','komen','staan','liggen','zitten','doen'];
+  return !nonVerbs.includes(lower);
+}
+
+async function fetchConjugations(word, word_id){
+  try{
+    const r=await fetch(BASE_URL+'/api/conjugate',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({word, word_id})
+    });
+    if(!r.ok) return null;
+    const d=await r.json();
+    return d.is_verb ? d : null;
+  }catch(_){ return null; }
+}
+
 async function addWord(){
   const w=$('inp-word').value.trim();
   const m=$('inp-meaning').value.trim();
@@ -570,7 +608,15 @@ async function addWord(){
     next_review:today()
   }).select().single();
   if(error){console.error('Insert error:',error);return;}
-  if(data) words.push(data);
+  if(data){
+    words.push(data);
+    // Auto-fetch conjugations in background for Dutch verbs
+    if((lang||'').startsWith('nl') && looksLikeVerb(w)){
+      fetchConjugations(w, data.id).then(conj=>{
+        if(conj){ const idx=words.findIndex(x=>x.id===data.id); if(idx>-1) words[idx].conjugations=conj; }
+      });
+    }
+  }
   renderBoxPills();renderHome();
 }
 
@@ -937,6 +983,7 @@ function renderReview(){
       <button class="fc-pron-btn" id="fc-pron-btn" onclick="event.stopPropagation();triggerPron('${w.id}')">
         🔊 <span id="pron-btn-label">Listen</span>
       </button>
+      <div id="fc-conjugations" style="display:none"></div>
       <div id="fc-sentence" class="fc-sentence" style="display:none"></div>
       <div class="fc-hint" id="fc-hint">tap card to reveal meaning</div>
     </div>
@@ -947,6 +994,26 @@ function renderReview(){
   if(autoPronounce) setTimeout(()=>triggerPron(w.id),400);
 }
 
+function renderConjugationTable(conj){
+  const tenses=[
+    ['present','Present'],['past','Past'],
+    ['present_perfect','Present Perfect'],['future','Future']
+  ];
+  const pronouns=['ik','jij','hij/zij','wij','jullie','zij'];
+  let html=`<details class="conj-details"><summary>📋 Verb conjugations</summary><div class="conj-grid">`;
+  for(const [key,label] of tenses){
+    if(!conj[key]) continue;
+    html+=`<div class="conj-tense"><div class="conj-tense-title">${label}</div>`;
+    for(const p of pronouns){
+      const form=conj[key][p]||'';
+      if(form) html+=`<div class="conj-row"><span class="conj-pronoun">${p}</span><span class="conj-form">${form}</span></div>`;
+    }
+    html+=`</div>`;
+  }
+  html+=`</div></details>`;
+  return html;
+}
+
 function revealCard(){
   if(revealed)return;revealed=true;
   const w=reviewQueue[rIdx];
@@ -955,6 +1022,27 @@ function revealCard(){
   $('fc-hint').textContent='how did you do?';
   $('vrow').style.display='flex';
   if(autoPronounce) setTimeout(()=>triggerPron(w.id),300);
+  // Show conjugations — from DB cache or fetch if missing
+  const conjBox=$('fc-conjugations');
+  if(conjBox){
+    if(w.conjugations?.is_verb){
+      conjBox.innerHTML=renderConjugationTable(w.conjugations);
+      conjBox.style.display='block';
+    } else if(!w.conjugations && (w.language||'').startsWith('nl') && looksLikeVerb(w.word)){
+      conjBox.innerHTML='<div style="font-size:12px;color:var(--text2);padding:8px 14px">Loading conjugations…</div>';
+      conjBox.style.display='block';
+      fetchConjugations(w.word, w.id).then(conj=>{
+        if(!conjBox) return;
+        if(conj){
+          const idx=words.findIndex(x=>x.id===w.id);
+          if(idx>-1) words[idx].conjugations=conj;
+          conjBox.innerHTML=renderConjugationTable(conj);
+        } else {
+          conjBox.style.display='none';
+        }
+      });
+    }
+  }
   // show sentence placeholder then fetch
   const box=$('fc-sentence');
   if(box){
