@@ -814,15 +814,17 @@ function renderSingleAddTab(){
     const word=$('inp-word').value.trim();
     if(!word||$('inp-meaning').value.trim()) return; // don't overwrite existing meaning
     _lookupTimer=setTimeout(async()=>{
-      const langCode=(selectedLang||'nl-NL').split('-')[0]; // nl-NL → nl
       const meaningEl=$('inp-meaning');
       meaningEl.placeholder='Looking up…';
       try{
-        const r=await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=${langCode}|en`);
+        const r=await fetch(BASE_URL+'/api/meaning',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({word, language: selectedLang||'nl-NL'})
+        });
         const d=await r.json();
-        const match=d?.responseData?.translatedText;
-        if(match&&match.toLowerCase()!==word.toLowerCase()&&$('inp-meaning').value.trim()===''){
-          meaningEl.value=match;
+        if(d?.meaning && $('inp-meaning').value.trim()===''){
+          meaningEl.value=d.meaning;
         }
       }catch(_){}
       meaningEl.placeholder='Meaning / translation';
