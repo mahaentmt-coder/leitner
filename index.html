@@ -575,9 +575,7 @@ function looksLikeVerb(w){
   if(lower.includes(' ')) return false;
   // Must end in -en and be long enough
   if(!lower.endsWith('en') || lower.length<=3) return false;
-  // Irregular verbs that end in -en but are already known
-  const nonVerbs=['zijn','hebben','worden','kunnen','mogen','willen','zullen','moeten','blijven','laten','gaan','komen','staan','liggen','zitten','doen'];
-  return !nonVerbs.includes(lower);
+  return true;
 }
 
 async function fetchConjugations(word, word_id){
