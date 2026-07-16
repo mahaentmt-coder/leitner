@@ -618,6 +618,11 @@ async function addWord(){
   renderBoxPills();renderHome();
 }
 
+async function reactivateWord(id){
+  const ok=await updateWord(id,{section:1,done:false,next_review:today()});
+  if(ok){ renderBoxPills();renderHome(); }
+}
+
 async function deleteWord(id){
   await sb.from('words').delete().eq('id',id);
   words=words.filter(w=>w.id!==id);
@@ -759,6 +764,22 @@ function renderHome(){
       <div class="card-title">Word list (${words.length})</div>
       <div class="word-list">${wordItems}</div>
     </div>
+    ${words.filter(w=>w.done).length>0?`
+    <details class="add-word-details">
+      <summary>🏆 Memorized words (${words.filter(w=>w.done).length})</summary>
+      <div class="add-word-inner">
+        <div style="font-size:12px;color:var(--text2);margin-bottom:10px">Click a word to move it back to Box 1 for re-learning.</div>
+        <div class="word-list">${words.filter(w=>w.done).map(w=>`
+          <div class="word-item" style="cursor:pointer" onclick="reactivateWord('${w.id}')">
+            <span><b>${w.word}</b> — <span class="muted">${w.meaning}</span></span>
+            <span class="word-actions">
+              <span class="badge" style="background:var(--accent-bg);color:var(--accent)">memorized</span>
+              <span style="font-size:11px;color:var(--text2)">↩ re-learn</span>
+            </span>
+          </div>`).join('')}
+        </div>
+      </div>
+    </details>`:''}
     <details class="add-word-details">
       <summary>+ Add / import words</summary>
       <div class="add-word-inner">
@@ -1080,6 +1101,25 @@ async function judge(correct){
       err.textContent='⚠ Could not save to database. Check Supabase connection.';
       fc.appendChild(err);
       await new Promise(r=>setTimeout(r,2500));
+    }
+  }
+  // Motivational message when word is fully memorized
+  if(update.done){
+    const fc=document.getElementById('fc');
+    if(fc){
+      fc.innerHTML=`<div style="text-align:center;padding:24px 12px">
+        <div style="font-size:48px;margin-bottom:12px">🏆</div>
+        <div style="font-size:20px;font-weight:700;color:var(--accent);margin-bottom:8px">"${w.word}" memorized!</div>
+        <div style="font-size:14px;color:var(--text2);margin-bottom:4px">${w.meaning}</div>
+        <div style="font-size:13px;color:var(--text2);margin-top:12px">${[
+          'Outstanding! This word is now part of your long-term memory.',
+          'Excellent work! You have fully mastered this word.',
+          'Amazing! This word has moved to your memorized list.',
+          'Well done! Another word conquered!',
+          'Brilliant! This word is locked in your memory for good.'
+        ][Math.floor(Math.random()*5)]}</div>
+      </div>`;
+      await new Promise(r=>setTimeout(r,2200));
     }
   }
   rIdx++;revealed=false;
