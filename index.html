@@ -354,14 +354,13 @@ function computeNextReview(currentSection, correct){
     // Wrong: reset to section 1, due tomorrow (not same day)
     return { section: 1, done: false, next_review: addDays(today(), 1) };
   }
-  const newSection = currentSection===31 ? 31 : currentSection+1;
-  const done = newSection===31 && currentSection===31 ? false : (newSection===31 ? false : false);
-  // Actually mark done only when already at 31 and got it right again
-  const isDone = currentSection===31;
+  // Correct in Box 5 → word is memorized
+  const isDone = getBoxNum(currentSection) === 5;
+  if(isDone) return { section: currentSection, done: true, next_review: null };
+  const newSection = currentSection + 1;
   const box = getBoxNum(newSection);
   const interval = BOX_INTERVALS[Math.min(box-1, BOX_INTERVALS.length-1)];
-  const next = isDone ? null : addDays(today(), interval);
-  return { section: newSection, done: isDone, next_review: next };
+  return { section: newSection, done: false, next_review: addDays(today(), interval) };
 }
 
 // ── Dutch sentence generator ─────────────────────────────────
