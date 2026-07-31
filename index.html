@@ -446,12 +446,10 @@ function renderBoxPills(){
   let h='',cum=0;
   for(let i=0;i<BOX_SIZES.length;i++){
     const s=cum+1,e=cum+BOX_SIZES[i];
-    const ws=words.filter(w=>w.section>=s&&w.section<=e);
+    const ws=words.filter(w=>w.section>=s&&w.section<=e&&!w.done);
     const dueNow=ws.filter(w=>isDue(w)).length;
-    const allDone=ws.length>0&&ws.every(w=>w.done);
     let cls='box-pill';
-    if(allDone) cls+=' done';
-    else if(dueNow>0) cls+=' due';
+    if(dueNow>0) cls+=' due';
     else if(ws.length>0) cls+=' has-words';
     h+=`<div class="${cls}">Box ${i+1} <b>${ws.length}</b>${dueNow>0?` <span style="font-size:10px">(${dueNow})</span>`:''}`;
     h+=`</div>`;
