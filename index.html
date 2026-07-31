@@ -762,10 +762,10 @@ function renderHome(){
       <div class="card-title">Word list (${words.length})</div>
       <div class="word-list">${wordItems}</div>
     </div>
-    ${words.filter(w=>w.done).length>0?`
     <details class="add-word-details" id="memorized-section">
       <summary>🏆 Memorized words (${words.filter(w=>w.done).length})</summary>
       <div class="add-word-inner">
+        ${words.filter(w=>w.done).length===0?`<div style="font-size:13px;color:var(--text2);text-align:center;padding:12px 0">No memorized words yet. Keep going!</div>`:`
         <div style="font-size:12px;color:var(--text2);margin-bottom:10px">Click a word to move it back to Box 1 for re-learning.</div>
         <div class="word-list">${words.filter(w=>w.done).map(w=>`
           <div class="word-item" style="cursor:pointer" onclick="reactivateWord('${w.id}')">
@@ -775,9 +775,9 @@ function renderHome(){
               <span style="font-size:11px;color:var(--text2)">↩ re-learn</span>
             </span>
           </div>`).join('')}
-        </div>
+        </div>`}
       </div>
-    </details>`:''}
+    </details>
     <details class="add-word-details">
       <summary>+ Add / import words</summary>
       <div class="add-word-inner">
