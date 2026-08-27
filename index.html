@@ -564,6 +564,12 @@ async function fetchWords(){
   words=data||[];
 }
 
+function looksLikeSentence(w){
+  const t=w.trim();
+  // A sentence has multiple words or ends with punctuation
+  return t.includes(' ') && (t.endsWith('.')||t.endsWith('!')||t.endsWith('?')||t.split(' ').length>=4);
+}
+
 function looksLikeVerb(w){
   const lower=w.toLowerCase().trim();
   // Words with articles are nouns
@@ -1011,7 +1017,7 @@ function renderReview(){
       <button class="btn-wrong" onclick="judge(false)">✗ Got it wrong</button>
       <button class="btn-correct" onclick="judge(true)">✓ Got it right</button>
     </div>`;
-  if(autoPronounce) setTimeout(()=>triggerPron(w.id),400);
+  if(autoPronounce && !looksLikeSentence(w.word)) setTimeout(()=>triggerPron(w.id),400);
 }
 
 function renderConjugationTable(conj){
@@ -1052,7 +1058,7 @@ function revealCard(){
   $('fc-meaning').style.display='block';
   $('fc-hint').textContent='how did you do?';
   $('vrow').style.display='flex';
-  if(autoPronounce) setTimeout(()=>triggerPron(w.id),300);
+  if(autoPronounce && !looksLikeSentence(w.word)) setTimeout(()=>triggerPron(w.id),300);
   // Show conjugations — from DB cache or fetch if missing
   const conjBox=$('fc-conjugations');
   if(conjBox){
