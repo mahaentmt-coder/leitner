@@ -1015,23 +1015,27 @@ function renderReview(){
 }
 
 function renderConjugationTable(conj){
-  const tenses=[
+  const defaultTenses=[
     ['present','Present'],['past','Past'],
     ['present_perfect','Present Perfect'],['future','Future']
   ];
-  const pronouns=['ik','jij','hij/zij','wij','jullie','zij'];
-  let html=`<details class="conj-details"><summary>📋 Verb conjugations</summary><div class="conj-grid">`;
+  const defaultPronouns=['ik','jij','hij/zij','wij','jullie','zij'];
+  const isTable = conj.type==='table';
+  const tenses = conj.tenses || defaultTenses;
+  const title = isTable ? '📋 Reference table' : '📋 Verb conjugations';
+  let html=`<details class="conj-details"><summary>${title}</summary><div class="conj-grid">`;
   for(const [key,label] of tenses){
     if(!conj[key]) continue;
     html+=`<div class="conj-tense"><div class="conj-tense-title">${label}</div>`;
-    // Handle both object format {ik:'kan',...} and legacy flat string format
     if(typeof conj[key]==='object'){
-      for(const p of pronouns){
-        const form=conj[key][p]||'';
-        if(form) html+=`<div class="conj-row"><span class="conj-pronoun">${p}</span><span class="conj-form">${form}</span></div>`;
+      // For reference tables use all keys; for verbs use fixed pronoun order
+      const rows = isTable
+        ? Object.entries(conj[key])
+        : defaultPronouns.map(p=>[p, conj[key][p]]).filter(([,v])=>v);
+      for(const [lbl,form] of rows){
+        if(form) html+=`<div class="conj-row"><span class="conj-pronoun">${lbl}</span><span class="conj-form">${form}</span></div>`;
       }
     } else {
-      // Legacy flat string: split by comma and show as plain text
       html+=`<div class="conj-row"><span class="conj-form" style="white-space:normal">${conj[key]}</span></div>`;
     }
     html+=`</div>`;
@@ -1051,7 +1055,7 @@ function revealCard(){
   // Show conjugations — from DB cache or fetch if missing
   const conjBox=$('fc-conjugations');
   if(conjBox){
-    if(w.conjugations?.is_verb){
+    if(w.conjugations && (w.conjugations.is_verb || w.conjugations.type==='table')){
       conjBox.innerHTML=renderConjugationTable(w.conjugations);
       conjBox.style.display='block';
     } else if(!w.conjugations && looksLikeVerb(w.word)){
