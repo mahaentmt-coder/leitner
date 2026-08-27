@@ -626,6 +626,23 @@ async function reactivateWord(id){
   if(ok){ renderBoxPills();renderHome(); }
 }
 
+async function markMemorized(id){
+  const ok=await updateWord(id,{done:true,next_review:null});
+  if(ok){ renderBoxPills();renderHome(); }
+}
+
+async function memorizeNow(){
+  const w=reviewQueue[rIdx];
+  if(!w) return;
+  const ok=await updateWord(w.id,{done:true,next_review:null});
+  if(ok){
+    rIdx++;revealed=false;
+    renderBoxPills();renderHome();
+    if(rIdx>=reviewQueue.length){ await fetchWords(); }
+    renderReview();
+  }
+}
+
 async function deleteWord(id){
   await sb.from('words').delete().eq('id',id);
   words=words.filter(w=>w.id!==id);
@@ -752,6 +769,7 @@ function renderHome(){
         <button class="play-btn" id="pb-${w.id}" onclick="speakWord('${w.word.replace(/'/g,"\'")}','${w.language||selectedLang}','pb-${w.id}')">🔊</button>
         ${w.language?`<span class="lang-badge">${langLabel(w.language)}</span>`:''}
         ${d?`<span class="badge badge-warn">due</span>`:w.done?`<span class="badge">done</span>`:`<span class="badge">${daysLeft}d</span>`}
+        ${!w.done?`<span style="cursor:pointer;font-size:14px;opacity:.5" title="Mark as memorized" onclick="markMemorized('${w.id}')">🏆</span>`:''}
         <span class="del-btn" onclick="deleteWord('${w.id}')">×</span>
       </span>
     </div>`;
@@ -1016,6 +1034,9 @@ function renderReview(){
     <div class="verdict-row" id="vrow" style="display:none;margin-top:.75rem">
       <button class="btn-wrong" onclick="judge(false)">✗ Got it wrong</button>
       <button class="btn-correct" onclick="judge(true)">✓ Got it right</button>
+    </div>
+    <div id="vrow2" style="display:none;margin-top:6px">
+      <button onclick="memorizeNow()" style="width:100%;padding:9px;border-radius:10px;font-size:13px;font-weight:500;font-family:inherit;cursor:pointer;border:none;background:var(--bg2);color:var(--text2)">🏆 Mark as memorized</button>
     </div>`;
   if(autoPronounce && !looksLikeSentence(w.word)) setTimeout(()=>triggerPron(w.id),400);
 }
@@ -1058,6 +1079,7 @@ function revealCard(){
   $('fc-meaning').style.display='block';
   $('fc-hint').textContent='how did you do?';
   $('vrow').style.display='flex';
+  if($('vrow2')) $('vrow2').style.display='block';
   if(autoPronounce && !looksLikeSentence(w.word)) setTimeout(()=>triggerPron(w.id),300);
   // Show conjugations — from DB cache or fetch if missing
   const conjBox=$('fc-conjugations');
