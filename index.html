@@ -1024,9 +1024,15 @@ function renderConjugationTable(conj){
   for(const [key,label] of tenses){
     if(!conj[key]) continue;
     html+=`<div class="conj-tense"><div class="conj-tense-title">${label}</div>`;
-    for(const p of pronouns){
-      const form=conj[key][p]||'';
-      if(form) html+=`<div class="conj-row"><span class="conj-pronoun">${p}</span><span class="conj-form">${form}</span></div>`;
+    // Handle both object format {ik:'kan',...} and legacy flat string format
+    if(typeof conj[key]==='object'){
+      for(const p of pronouns){
+        const form=conj[key][p]||'';
+        if(form) html+=`<div class="conj-row"><span class="conj-pronoun">${p}</span><span class="conj-form">${form}</span></div>`;
+      }
+    } else {
+      // Legacy flat string: split by comma and show as plain text
+      html+=`<div class="conj-row"><span class="conj-form" style="white-space:normal">${conj[key]}</span></div>`;
     }
     html+=`</div>`;
   }
