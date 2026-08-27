@@ -1023,7 +1023,8 @@ function renderConjugationTable(conj){
   const isTable = conj.type==='table';
   const tenses = conj.tenses || defaultTenses;
   const title = isTable ? '📋 Reference table' : '📋 Verb conjugations';
-  let html=`<details class="conj-details"><summary>${title}</summary><div class="conj-grid">`;
+  const openAttr = isTable ? ' open' : '';
+  let html=`<details class="conj-details"${openAttr}><summary>${title}</summary><div class="conj-grid">`;
   for(const [key,label] of tenses){
     if(!conj[key]) continue;
     html+=`<div class="conj-tense"><div class="conj-tense-title">${label}</div>`;
