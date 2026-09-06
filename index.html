@@ -1111,9 +1111,9 @@ function revealCard(){
       });
     }
   }
-  // show sentence placeholder then fetch
+  // show sentence placeholder then fetch (skip for reference table cards)
   const box=$('fc-sentence');
-  if(box){
+  if(box && !(w.conjugations && w.conjugations.type==='table')){
     box.style.display='block';
     box.innerHTML='<span class="fc-sent-loading">Generating example sentence…</span>';
     fetchExampleSentence(w.word, w.meaning, w.language||'Dutch', w.id).then(result=>{
