@@ -856,23 +856,29 @@ function renderSingleAddTab(){
   $('inp-word').addEventListener('input',()=>{
     clearTimeout(_lookupTimer);
     const word=$('inp-word').value.trim();
-    if(!word||$('inp-meaning').value.trim()) return; // don't overwrite existing meaning
+    // Require at least 4 chars and no existing meaning
+    if(!word||word.length<4||$('inp-meaning').value.trim()) return;
     _lookupTimer=setTimeout(async()=>{
+      // Re-check after debounce — user may still be typing
+      const currentWord=$('inp-word').value.trim();
+      if(currentWord!==word) return;
       const meaningEl=$('inp-meaning');
       meaningEl.placeholder='Looking up…';
       try{
         const r=await fetch(BASE_URL+'/api/meaning',{
           method:'POST',
           headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({word, language: selectedLang||'nl-NL'})
+          body:JSON.stringify({word: currentWord, language: selectedLang||'nl-NL'})
         });
         const d=await r.json();
-        if(d?.meaning && $('inp-meaning').value.trim()===''){
+        // Only fill if meaning looks valid (short, no "I cannot" error text)
+        if(d?.meaning && $('inp-meaning').value.trim()==='' &&
+           d.meaning.length<120 && !d.meaning.toLowerCase().startsWith('i cannot')){
           meaningEl.value=d.meaning;
         }
       }catch(_){}
       meaningEl.placeholder='Meaning / translation';
-    },600);
+    },1000);
   });
 }
 
