@@ -354,14 +354,13 @@ function computeNextReview(currentSection, correct){
     // Wrong: reset to section 1, due tomorrow (not same day)
     return { section: 1, done: false, next_review: addDays(today(), 1) };
   }
-  const newSection = currentSection===31 ? 31 : currentSection+1;
-  const done = newSection===31 && currentSection===31 ? false : (newSection===31 ? false : false);
-  // Actually mark done only when already at 31 and got it right again
-  const isDone = currentSection===31;
+  // Correct in Box 5 → word is memorized
+  const isDone = getBoxNum(currentSection) === 5;
+  if(isDone) return { section: currentSection, done: true, next_review: null };
+  const newSection = currentSection + 1;
   const box = getBoxNum(newSection);
   const interval = BOX_INTERVALS[Math.min(box-1, BOX_INTERVALS.length-1)];
-  const next = isDone ? null : addDays(today(), interval);
-  return { section: newSection, done: isDone, next_review: next };
+  return { section: newSection, done: false, next_review: addDays(today(), interval) };
 }
 
 // ── Dutch sentence generator ─────────────────────────────────
@@ -446,12 +445,10 @@ function renderBoxPills(){
   let h='',cum=0;
   for(let i=0;i<BOX_SIZES.length;i++){
     const s=cum+1,e=cum+BOX_SIZES[i];
-    const ws=words.filter(w=>w.section>=s&&w.section<=e);
+    const ws=words.filter(w=>w.section>=s&&w.section<=e&&!w.done);
     const dueNow=ws.filter(w=>isDue(w)).length;
-    const allDone=ws.length>0&&ws.every(w=>w.done);
     let cls='box-pill';
-    if(allDone) cls+=' done';
-    else if(dueNow>0) cls+=' due';
+    if(dueNow>0) cls+=' due';
     else if(ws.length>0) cls+=' has-words';
     h+=`<div class="${cls}">Box ${i+1} <b>${ws.length}</b>${dueNow>0?` <span style="font-size:10px">(${dueNow})</span>`:''}`;
     h+=`</div>`;
@@ -567,6 +564,12 @@ async function fetchWords(){
   words=data||[];
 }
 
+function looksLikeSentence(w){
+  const t=w.trim();
+  // A sentence has multiple words or ends with punctuation
+  return t.includes(' ') && (t.endsWith('.')||t.endsWith('!')||t.endsWith('?')||t.split(' ').length>=4);
+}
+
 function looksLikeVerb(w){
   const lower=w.toLowerCase().trim();
   // Words with articles are nouns
@@ -575,9 +578,7 @@ function looksLikeVerb(w){
   if(lower.includes(' ')) return false;
   // Must end in -en and be long enough
   if(!lower.endsWith('en') || lower.length<=3) return false;
-  // Irregular verbs that end in -en but are already known
-  const nonVerbs=['zijn','hebben','worden','kunnen','mogen','willen','zullen','moeten','blijven','laten','gaan','komen','staan','liggen','zitten','doen'];
-  return !nonVerbs.includes(lower);
+  return true;
 }
 
 async function fetchConjugations(word, word_id){
@@ -618,6 +619,28 @@ async function addWord(){
     }
   }
   renderBoxPills();renderHome();
+}
+
+async function reactivateWord(id){
+  const ok=await updateWord(id,{section:1,done:false,next_review:today()});
+  if(ok){ renderBoxPills();renderHome(); }
+}
+
+async function markMemorized(id){
+  const ok=await updateWord(id,{done:true,next_review:null});
+  if(ok){ renderBoxPills();renderHome(); }
+}
+
+async function memorizeNow(){
+  const w=reviewQueue[rIdx];
+  if(!w) return;
+  const ok=await updateWord(w.id,{done:true,next_review:null});
+  if(ok){
+    rIdx++;revealed=false;
+    renderBoxPills();renderHome();
+    if(rIdx>=reviewQueue.length){ await fetchWords(); }
+    renderReview();
+  }
 }
 
 async function deleteWord(id){
@@ -746,6 +769,7 @@ function renderHome(){
         <button class="play-btn" id="pb-${w.id}" onclick="speakWord('${w.word.replace(/'/g,"\'")}','${w.language||selectedLang}','pb-${w.id}')">🔊</button>
         ${w.language?`<span class="lang-badge">${langLabel(w.language)}</span>`:''}
         ${d?`<span class="badge badge-warn">due</span>`:w.done?`<span class="badge">done</span>`:`<span class="badge">${daysLeft}d</span>`}
+        ${!w.done?`<span style="cursor:pointer;font-size:14px;opacity:.5" title="Mark as memorized" onclick="markMemorized('${w.id}')">🏆</span>`:''}
         <span class="del-btn" onclick="deleteWord('${w.id}')">×</span>
       </span>
     </div>`;
@@ -757,10 +781,28 @@ function renderHome(){
       <button class="btn btn-primary btn-full review-cta" onclick="startReview()">
         Review ${due.length} word${due.length!==1?'s':''} due today ↗
       </button>`:''}
-    <div class="card">
-      <div class="card-title">Word list (${words.length})</div>
-      <div class="word-list">${wordItems}</div>
-    </div>
+    <details class="add-word-details" id="memorized-section">
+      <summary>🏆 Memorized words (${words.filter(w=>w.done).length})</summary>
+      <div class="add-word-inner">
+        ${words.filter(w=>w.done).length===0?`<div style="font-size:13px;color:var(--text2);text-align:center;padding:12px 0">No memorized words yet. Keep going!</div>`:`
+        <div style="font-size:12px;color:var(--text2);margin-bottom:10px">Click a word to move it back to Box 1 for re-learning.</div>
+        <div class="word-list">${words.filter(w=>w.done).map(w=>`
+          <div class="word-item" style="cursor:pointer" onclick="reactivateWord('${w.id}')">
+            <span><b>${w.word}</b> — <span class="muted">${w.meaning}</span></span>
+            <span class="word-actions">
+              <span class="badge" style="background:var(--accent-bg);color:var(--accent)">memorized</span>
+              <span style="font-size:11px;color:var(--text2)">↩ re-learn</span>
+            </span>
+          </div>`).join('')}
+        </div>`}
+      </div>
+    </details>
+    <details class="add-word-details">
+      <summary>Word list (${words.filter(w=>!w.done).length})</summary>
+      <div class="add-word-inner" style="padding:0">
+        <div class="word-list">${wordItems}</div>
+      </div>
+    </details>
     <details class="add-word-details">
       <summary>+ Add / import words</summary>
       <div class="add-word-inner">
@@ -814,21 +856,29 @@ function renderSingleAddTab(){
   $('inp-word').addEventListener('input',()=>{
     clearTimeout(_lookupTimer);
     const word=$('inp-word').value.trim();
-    if(!word||$('inp-meaning').value.trim()) return; // don't overwrite existing meaning
+    // Require at least 4 chars and no existing meaning
+    if(!word||word.length<4||$('inp-meaning').value.trim()) return;
     _lookupTimer=setTimeout(async()=>{
-      const langCode=(selectedLang||'nl-NL').split('-')[0]; // nl-NL → nl
+      // Re-check after debounce — user may still be typing
+      const currentWord=$('inp-word').value.trim();
+      if(currentWord!==word) return;
       const meaningEl=$('inp-meaning');
       meaningEl.placeholder='Looking up…';
       try{
-        const r=await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(word)}&langpair=${langCode}|en`);
+        const r=await fetch(BASE_URL+'/api/meaning',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({word: currentWord, language: selectedLang||'nl-NL'})
+        });
         const d=await r.json();
-        const match=d?.responseData?.translatedText;
-        if(match&&match.toLowerCase()!==word.toLowerCase()&&$('inp-meaning').value.trim()===''){
-          meaningEl.value=match;
+        // Only fill if meaning looks valid (short, no "I cannot" error text)
+        if(d?.meaning && $('inp-meaning').value.trim()==='' &&
+           d.meaning.length<120 && !d.meaning.toLowerCase().startsWith('i cannot')){
+          meaningEl.value=d.meaning;
         }
       }catch(_){}
       meaningEl.placeholder='Meaning / translation';
-    },600);
+    },1000);
   });
 }
 
@@ -954,7 +1004,10 @@ function downloadTemplate(){
 
 // ── Review ────────────────────────────────────────────────────
 function startReview(){
-  reviewQueue=shuffle(words.filter(w=>isDue(w)));
+  // Group due words by box (highest first), shuffle within each box
+  const due=words.filter(w=>isDue(w));
+  const boxes=[5,4,3,2,1];
+  reviewQueue=boxes.flatMap(b=>shuffle(due.filter(w=>getBoxNum(w.section)===b)));
   rIdx=0;revealed=false;stats={ok:0,ng:0};renderReview();
 }
 
@@ -990,23 +1043,37 @@ function renderReview(){
     <div class="verdict-row" id="vrow" style="display:none;margin-top:.75rem">
       <button class="btn-wrong" onclick="judge(false)">✗ Got it wrong</button>
       <button class="btn-correct" onclick="judge(true)">✓ Got it right</button>
+    </div>
+    <div id="vrow2" style="display:none;margin-top:6px">
+      <button onclick="memorizeNow()" style="width:100%;padding:9px;border-radius:10px;font-size:13px;font-weight:500;font-family:inherit;cursor:pointer;border:none;background:var(--bg2);color:var(--text2)">🏆 Mark as memorized</button>
     </div>`;
-  if(autoPronounce) setTimeout(()=>triggerPron(w.id),400);
+  if(autoPronounce && !looksLikeSentence(w.word)) setTimeout(()=>triggerPron(w.id),400);
 }
 
 function renderConjugationTable(conj){
-  const tenses=[
+  const defaultTenses=[
     ['present','Present'],['past','Past'],
     ['present_perfect','Present Perfect'],['future','Future']
   ];
-  const pronouns=['ik','jij','hij/zij','wij','jullie','zij'];
-  let html=`<details class="conj-details"><summary>📋 Verb conjugations</summary><div class="conj-grid">`;
+  const defaultPronouns=['ik','jij','hij/zij','wij','jullie','zij'];
+  const isTable = conj.type==='table';
+  const tenses = conj.tenses || defaultTenses;
+  const title = isTable ? '📋 Reference table' : '📋 Verb conjugations';
+  const openAttr = isTable ? ' open' : '';
+  let html=`<details class="conj-details"${openAttr}><summary>${title}</summary><div class="conj-grid">`;
   for(const [key,label] of tenses){
     if(!conj[key]) continue;
     html+=`<div class="conj-tense"><div class="conj-tense-title">${label}</div>`;
-    for(const p of pronouns){
-      const form=conj[key][p]||'';
-      if(form) html+=`<div class="conj-row"><span class="conj-pronoun">${p}</span><span class="conj-form">${form}</span></div>`;
+    if(typeof conj[key]==='object'){
+      // For reference tables use all keys; for verbs use fixed pronoun order
+      const rows = isTable
+        ? Object.entries(conj[key])
+        : defaultPronouns.map(p=>[p, conj[key][p]]).filter(([,v])=>v);
+      for(const [lbl,form] of rows){
+        if(form) html+=`<div class="conj-row"><span class="conj-pronoun">${lbl}</span><span class="conj-form">${form}</span></div>`;
+      }
+    } else {
+      html+=`<div class="conj-row"><span class="conj-form" style="white-space:normal">${conj[key]}</span></div>`;
     }
     html+=`</div>`;
   }
@@ -1021,11 +1088,12 @@ function revealCard(){
   $('fc-meaning').style.display='block';
   $('fc-hint').textContent='how did you do?';
   $('vrow').style.display='flex';
-  if(autoPronounce) setTimeout(()=>triggerPron(w.id),300);
+  if($('vrow2')) $('vrow2').style.display='block';
+  if(autoPronounce && !looksLikeSentence(w.word)) setTimeout(()=>triggerPron(w.id),300);
   // Show conjugations — from DB cache or fetch if missing
   const conjBox=$('fc-conjugations');
   if(conjBox){
-    if(w.conjugations?.is_verb){
+    if(w.conjugations && (w.conjugations.is_verb || w.conjugations.type==='table')){
       conjBox.innerHTML=renderConjugationTable(w.conjugations);
       conjBox.style.display='block';
     } else if(!w.conjugations && looksLikeVerb(w.word)){
@@ -1080,6 +1148,25 @@ async function judge(correct){
       err.textContent='⚠ Could not save to database. Check Supabase connection.';
       fc.appendChild(err);
       await new Promise(r=>setTimeout(r,2500));
+    }
+  }
+  // Motivational message when word is fully memorized
+  if(update.done){
+    const fc=document.getElementById('fc');
+    if(fc){
+      fc.innerHTML=`<div style="text-align:center;padding:24px 12px">
+        <div style="font-size:48px;margin-bottom:12px">🏆</div>
+        <div style="font-size:20px;font-weight:700;color:var(--accent);margin-bottom:8px">"${w.word}" memorized!</div>
+        <div style="font-size:14px;color:var(--text2);margin-bottom:4px">${w.meaning}</div>
+        <div style="font-size:13px;color:var(--text2);margin-top:12px">${[
+          'Outstanding! This word is now part of your long-term memory.',
+          'Excellent work! You have fully mastered this word.',
+          'Amazing! This word has moved to your memorized list.',
+          'Well done! Another word conquered!',
+          'Brilliant! This word is locked in your memory for good.'
+        ][Math.floor(Math.random()*5)]}</div>
+      </div>`;
+      await new Promise(r=>setTimeout(r,2200));
     }
   }
   rIdx++;revealed=false;

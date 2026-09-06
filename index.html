@@ -1004,7 +1004,10 @@ function downloadTemplate(){
 
 // ── Review ────────────────────────────────────────────────────
 function startReview(){
-  reviewQueue=shuffle(words.filter(w=>isDue(w)));
+  // Group due words by box (highest first), shuffle within each box
+  const due=words.filter(w=>isDue(w));
+  const boxes=[5,4,3,2,1];
+  reviewQueue=boxes.flatMap(b=>shuffle(due.filter(w=>getBoxNum(w.section)===b)));
   rIdx=0;revealed=false;stats={ok:0,ng:0};renderReview();
 }
 
