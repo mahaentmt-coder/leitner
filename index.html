@@ -1065,9 +1065,9 @@ function renderConjugationTable(conj){
     if(!conj[key]) continue;
     html+=`<div class="conj-tense"><div class="conj-tense-title">${label}</div>`;
     if(typeof conj[key]==='object'){
-      // For reference tables use all keys; for verbs use fixed pronoun order
+      // For reference tables: support arrays (ordered) or objects (fallback); for verbs use fixed pronoun order
       const rows = isTable
-        ? Object.entries(conj[key])
+        ? (Array.isArray(conj[key]) ? conj[key] : Object.entries(conj[key]))
         : defaultPronouns.map(p=>[p, conj[key][p]]).filter(([,v])=>v);
       for(const [lbl,form] of rows){
         if(form) html+=`<div class="conj-row"><span class="conj-pronoun">${lbl}</span><span class="conj-form">${form}</span></div>`;
