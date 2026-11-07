@@ -239,6 +239,54 @@
   .notif-status.err { background:var(--danger-bg);color:var(--danger); }
   .notif-icon-btn { position:relative; }
   .notif-dot { position:absolute;top:6px;right:6px;width:8px;height:8px;border-radius:50%;background:var(--accent);display:none; }
+  /* ── Fill-in practice ── */
+  .px-textarea { width:100%;min-height:120px;resize:vertical;border:0.5px solid var(--border1);border-radius:10px;padding:10px 12px;font-family:'DM Sans',sans-serif;font-size:14px;line-height:1.5;background:var(--bg0);color:var(--text0);outline:none; }
+  .px-textarea:focus { border-color:var(--accent); }
+  .px-quick { display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 4px; }
+  .px-hint { font-size:12px;color:var(--text2);margin-bottom:1rem; }
+  .px-row { display:flex;gap:12px;flex-wrap:wrap;margin-bottom:.75rem; }
+  .px-row > div { flex:1;min-width:140px; }
+  .px-row .section-tabs { margin-bottom:0; }
+  .px-check { display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text1);cursor:pointer;margin:.5rem 0; }
+  .px-check input { width:16px;height:16px;accent-color:var(--accent); }
+  .px-scene { perspective:1400px; }
+  .px-card { display:grid;transition:transform .55s cubic-bezier(.3,.7,.3,1);transform-style:preserve-3d; }
+  .px-card.flipped { transform:rotateY(180deg); }
+  .px-face { grid-area:1/1;backface-visibility:hidden;-webkit-backface-visibility:hidden;background:var(--card);border:0.5px solid var(--border0);border-radius:16px;padding:1.25rem;box-shadow:var(--shadow);min-height:320px;display:flex;flex-direction:column; }
+  .px-back { transform:rotateY(180deg);pointer-events:none; }
+  .px-card.flipped .px-front { pointer-events:none; }
+  .px-card.flipped .px-back { pointer-events:auto; }
+  .px-sentence { font-size:20px;line-height:1.6;margin:0 0 1rem; }
+  .px-blank { display:inline-block;min-width:80px;border-bottom:2px solid var(--accent);text-align:center;color:var(--accent);font-weight:500; }
+  .px-input { width:100%;font-size:17px;padding:12px 14px; }
+  .px-bank { display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 0;max-height:120px;overflow:auto; }
+  .px-chip { border:0.5px solid var(--border1);background:var(--bg1);color:var(--text0);border-radius:999px;padding:4px 11px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer; }
+  .px-chip:active { background:var(--accent-bg); }
+  .px-actions { display:flex;gap:10px;margin-top:auto;padding-top:1rem; }
+  .px-actions .btn { flex:1;padding:12px;font-size:14px; }
+  .px-verdict { border-radius:10px;padding:8px 12px;font-size:14px;font-weight:500;margin-bottom:12px; }
+  .px-verdict small { display:block;font-weight:400;font-size:12px;margin-top:2px; }
+  .px-verdict.good { background:var(--accent-bg);color:var(--accent); }
+  .px-verdict.bad { background:var(--danger-bg);color:var(--danger); }
+  .px-verdict.close { background:var(--warn-bg);color:var(--warn); }
+  .px-full { font-size:18px;line-height:1.6;margin:0 0 6px; }
+  .px-full mark { background:var(--accent-bg);color:var(--accent);border-radius:5px;padding:1px 5px;font-weight:600; }
+  .px-trans { color:var(--text1);font-style:italic;font-size:14px;line-height:1.5;margin:0 0 14px; }
+  .px-listen { display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2);margin-bottom:6px; }
+  .px-wordbox { display:flex;align-items:center;gap:12px;background:var(--bg1);border:0.5px solid var(--border0);border-radius:12px;padding:12px 14px; }
+  .px-wordbox .px-w { font-size:22px;font-weight:600; }
+  .px-wordbox .px-m { color:var(--text1);font-size:14px; }
+  .px-wordbox .px-base { font-size:12px;color:var(--text2); }
+  .px-speak { border:none;background:var(--accent-bg);color:var(--accent);border-radius:50%;width:40px;height:40px;font-size:16px;cursor:pointer;flex:none; }
+  .px-speak.sm { width:32px;height:32px;font-size:13px; }
+  .px-score { font-size:40px;font-weight:600;text-align:center;color:var(--accent); }
+  .px-score-sub { text-align:center;color:var(--text1);font-size:14px;margin-bottom:1rem; }
+  .px-miss { border-top:0.5px solid var(--border0);padding:10px 0;font-size:14px;line-height:1.45; }
+  .px-miss b { color:var(--accent); }
+  .px-miss .px-t { color:var(--text2);font-size:12px;font-style:italic; }
+  .px-spin { width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;display:inline-block;vertical-align:-3px;margin-right:8px;animation:pxspin .8s linear infinite; }
+  @keyframes pxspin { to { transform:rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .px-card { transition:none; } }
 </style>
 </head>
 <body>
@@ -736,6 +784,202 @@ function renderScheduleSummary(){
   return bannerHtml+upcomingHtml;
 }
 
+// ── Fill-in practice ──────────────────────────────────────────
+const px={deck:[],idx:0,results:[],answered:false,words:[],
+  opts:(()=>{try{return JSON.parse(localStorage.getItem('px_opts'))||{count:10,level:'A2',bank:true};}catch(e){return {count:10,level:'A2',bank:true};}})()};
+const pxEsc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pxStore=(k,v)=>{try{localStorage.setItem(k,typeof v==='string'?v:JSON.stringify(v));}catch(e){}};
+const pxLoad=k=>{try{return localStorage.getItem(k);}catch(e){return null;}};
+const pxNorm=s=>String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[.,!?;:"'“”‘’()]/g,'').replace(/\s+/g,' ').trim();
+const PX_ERR={need_words:'Add at least two words.',auth:'The AI key was rejected. Check ANTHROPIC_KEY in Vercel.',
+  limit:'The AI service is busy or out of credit. Try again in a minute.',parse:'The exercises came back malformed. Please try again.',
+  api:'The AI service returned an error. Please try again.',network:'Network problem. Check your connection and try again.'};
+
+function pxParse(raw){
+  const seen=new Set(),out=[];
+  raw.split(/\s+[-–—]\s+|[–—,;\n\r\t•·|]+/).map(s=>s.replace(/^\s*\d+[.)]\s*/,'').trim()).filter(Boolean)
+    .forEach(p=>{const k=p.toLowerCase();if(!seen.has(k)){seen.add(k);out.push(p);}});
+  return out;
+}
+function pxDueWords(){return words.filter(w=>isDue(w)&&!w.done).map(w=>w.word);}
+function pxRecentWords(){
+  return [...words].filter(w=>!w.done).sort((a,b)=>String(b.created_at||'').localeCompare(String(a.created_at||''))).slice(0,30).map(w=>w.word);
+}
+function pxFill(list){const t=$('px-words');if(t){t.value=list.join(' – ');pxCount();}}
+function pxCount(){const n=pxParse($('px-words').value).length;$('px-count').textContent=n?`· ${n} word${n===1?'':'s'}`:'';}
+
+function renderPractice(){
+  stopSpeech();
+  const saved=pxLoad('px_words');
+  const due=pxDueWords();
+  const initial=saved||(due.length>=2?due:pxRecentWords()).join(' – ');
+  const seg=(key,vals)=>`<div class="section-tabs">${vals.map(v=>`<button class="${String(px.opts[key])===String(v)?'on':''}" onclick="pxSetOpt('${key}','${v}',this)">${v}</button>`).join('')}</div>`;
+  $('main').innerHTML=`
+    <button class="back-link" onclick="renderHome();renderBoxPills()">← back</button>
+    <div class="card">
+      <div class="card-title">✏️ Fill-in practice</div>
+      <label class="form-label" for="px-words">Words to practise <span id="px-count" style="font-weight:400"></span></label>
+      <textarea id="px-words" class="px-textarea" spellcheck="false" placeholder="groot – klein – nat – droog …">${pxEsc(initial)}</textarea>
+      <div class="px-quick">
+        ${due.length?`<button class="btn" onclick="pxFill(pxDueWords())">Today's due words (${due.length})</button>`:''}
+        <button class="btn" onclick="pxFill(pxRecentWords())">My 30 newest words</button>
+      </div>
+      <div class="px-hint">Paste any list, separated by dashes, commas or new lines.</div>
+      <div class="px-row">
+        <div><label class="form-label">Exercises</label>${seg('count',[5,10,15,20])}</div>
+        <div><label class="form-label">Level</label>${seg('level',['A1','A2','B1'])}</div>
+      </div>
+      <label class="px-check"><input type="checkbox" id="px-bank" ${px.opts.bank!==false?'checked':''} onchange="px.opts.bank=this.checked;pxStore('px_opts',px.opts)"> Show word bank while answering</label>
+      <button class="btn btn-primary btn-full" id="px-gen" style="padding:12px;font-size:14px" onclick="pxGenerate()">Generate exercises</button>
+      <div id="px-err"></div>
+    </div>`;
+  $('px-words').addEventListener('input',pxCount);
+  pxCount();
+}
+function pxSetOpt(key,v,btn){
+  px.opts[key]=key==='count'?+v:v;pxStore('px_opts',px.opts);
+  btn.parentNode.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b===btn));
+}
+
+async function pxGenerate(fromResults){
+  if(!fromResults){
+    px.words=pxParse($('px-words').value);
+    pxStore('px_words',$('px-words').value);
+  }
+  const showErr=m=>{const e=$('px-err');if(e)e.innerHTML=`<div class="msg err">${pxEsc(m)}</div>`;};
+  if(px.words.length<2){showErr(PX_ERR.need_words);return;}
+  const btn=$('px-gen');
+  if(btn){btn.disabled=true;btn.innerHTML='<span class="px-spin"></span>Writing exercises…';}
+  try{
+    const res=await fetch(BASE_URL+'/api/exercise',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({words:px.words,count:px.opts.count,level:px.opts.level})});
+    const data=await res.json().catch(()=>({error:'parse'}));
+    if(!res.ok||data.error||!Array.isArray(data.exercises)) throw new Error(data.error||'api');
+    pxStart(data.exercises);
+  }catch(e){
+    if(fromResults) renderPractice();
+    showErr(PX_ERR[e.message]||PX_ERR.network);
+  }finally{
+    const b=$('px-gen');if(b){b.disabled=false;b.textContent='Generate exercises';}
+  }
+}
+
+function pxStart(exs){
+  px.deck=exs;px.idx=0;px.results=[];
+  $('main').innerHTML=`
+    <button class="back-link" onclick="stopSpeech();renderPractice()">← back to setup</button>
+    <div class="progress-meta"><span id="px-prog"></span><span id="px-score"></span></div>
+    <div class="progress-bar"><div class="progress-fill" id="px-bar" style="width:0%"></div></div>
+    <div class="px-scene"><div class="px-card" id="px-card">
+      <div class="px-face px-front">
+        <div class="card-title" id="px-qnum"></div>
+        <p class="px-sentence" id="px-q"></p>
+        <input type="text" class="px-input" id="px-in" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Type the missing word">
+        <div class="px-bank" id="px-bankbox"></div>
+        <div class="px-actions">
+          <button class="btn" onclick="pxReveal(true)">Show answer</button>
+          <button class="btn btn-primary" onclick="pxReveal(false)">Check</button>
+        </div>
+      </div>
+      <div class="px-face px-back">
+        <div class="px-verdict" id="px-verdict"></div>
+        <p class="px-full" id="px-full"></p>
+        <div class="px-listen"><button class="px-speak sm" title="Play sentence" onclick="speak(px.deck[px.idx].full_sentence,'nl-NL')">🔊</button>Listen to the sentence</div>
+        <p class="px-trans" id="px-trans"></p>
+        <div class="px-wordbox">
+          <div style="flex:1"><div class="px-w" id="px-aw"></div><div class="px-m" id="px-am"></div><div class="px-base" id="px-ab"></div></div>
+          <button class="px-speak" title="Pronounce word" onclick="speak(px.deck[px.idx].answer,'nl-NL')">🔊</button>
+        </div>
+        <div class="px-actions"><button class="btn btn-primary" onclick="pxNext()">Next →</button></div>
+      </div>
+    </div></div>`;
+  $('px-in').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();e.stopPropagation();pxReveal(false);}});
+  pxRender();
+}
+
+function pxRender(){
+  const ex=px.deck[px.idx];px.answered=false;
+  $('px-card').classList.remove('flipped');
+  $('px-qnum').textContent=`Exercise ${px.idx+1}`;
+  $('px-q').innerHTML=pxEsc(ex.sentence).replace('___','<span class="px-blank">&nbsp;?&nbsp;</span>');
+  const inp=$('px-in');inp.value='';
+  const bank=$('px-bankbox');
+  bank.style.display=px.opts.bank!==false?'':'none';
+  bank.innerHTML=px.opts.bank!==false?px.words.map(w=>`<button class="px-chip" type="button">${pxEsc(w)}</button>`).join(''):'';
+  bank.querySelectorAll('.px-chip').forEach(c=>c.onclick=()=>{inp.value=c.textContent;inp.focus();});
+  pxProgress(px.idx);
+  setTimeout(()=>inp.focus({preventScroll:true}),350);
+}
+function pxProgress(done){
+  $('px-prog').textContent=`${px.idx+1} / ${px.deck.length}`;
+  $('px-score').textContent=`✓ ${px.results.filter(r=>r.status==='good').length}`;
+  $('px-bar').style.width=`${done/px.deck.length*100}%`;
+}
+function pxGrade(input,ex){
+  const a=pxNorm(input);
+  if(!a) return 'skip';
+  if(a===pxNorm(ex.answer)||(ex.also_accept||[]).some(x=>pxNorm(x)===a)) return 'good';
+  if(a===pxNorm(ex.base)) return 'close';
+  return 'bad';
+}
+function pxReveal(skipped){
+  if(px.answered) return;
+  px.answered=true;
+  const ex=px.deck[px.idx],input=$('px-in').value.trim();
+  const status=skipped?'skip':pxGrade(input,ex);
+  px.results.push({ex,input,status});
+  const v=$('px-verdict');
+  v.className='px-verdict '+(status==='good'?'good':status==='close'?'close':'bad');
+  v.innerHTML=status==='good'
+    ?'Correct! ✓'+(pxNorm(input)!==pxNorm(ex.answer)?`<small>Also correct. The intended word was “${pxEsc(ex.answer)}”.</small>`:'')
+    :status==='close'?`Almost: right word, wrong form<small>You wrote “${pxEsc(input)}”, the sentence needs “${pxEsc(ex.answer)}”.</small>`
+    :status==='skip'?'Here’s the answer'
+    :`Not quite<small>You wrote “${pxEsc(input)}”.</small>`;
+  const [pre,post]=ex.sentence.split('___');
+  $('px-full').innerHTML=pxEsc(pre)+'<mark>'+pxEsc(ex.answer)+'</mark>'+pxEsc(post);
+  $('px-trans').textContent=ex.sentence_translation||'';
+  $('px-aw').textContent=ex.answer;
+  $('px-am').textContent=ex.word_meaning?`${ex.answer} = ${ex.word_meaning}`:'';
+  $('px-ab').textContent=pxNorm(ex.base)!==pxNorm(ex.answer)?`Dictionary form: ${ex.base}`:'';
+  $('px-card').classList.add('flipped');
+  $('px-in').blur();
+  pxProgress(px.idx+1);
+  setTimeout(()=>speak(ex.answer,'nl-NL'),450);
+}
+function pxNext(){
+  if(!px.answered) return;
+  if(px.idx<px.deck.length-1){px.idx++;pxRender();}
+  else pxResults();
+}
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&px.answered&&$('px-card')){e.preventDefault();pxNext();}
+});
+
+function pxResults(){
+  stopSpeech();
+  const good=px.results.filter(r=>r.status==='good').length,total=px.results.length;
+  const misses=px.results.filter(r=>r.status!=='good');
+  const pct=good/total;
+  $('main').innerHTML=`
+    <button class="back-link" onclick="renderHome();renderBoxPills()">← back to list</button>
+    <div class="card">
+      <div class="px-score">${good} / ${total}</div>
+      <div class="px-score-sub">${pct===1?'Perfect round! Uitstekend!':pct>=.7?'Goed gedaan!':'Keep going: every miss is a word learned.'}</div>
+      ${misses.map(r=>{const [pre,post]=r.ex.sentence.split('___');
+        return `<div class="px-miss">${pxEsc(pre)}<b>${pxEsc(r.ex.answer)}</b>${pxEsc(post)}
+          <div class="px-t">${pxEsc(r.ex.answer)} = ${pxEsc(r.ex.word_meaning)}${r.input?` · you wrote “${pxEsc(r.input)}”`:''}</div></div>`;}).join('')}
+      ${misses.length?`<button class="btn btn-primary btn-full" style="padding:12px" onclick="pxRetry()">Practise my mistakes again</button>`:''}
+      <button class="btn btn-full" id="px-gen" style="padding:12px" onclick="pxGenerate(true)">New set with the same words</button>
+      <button class="btn btn-full" style="padding:12px" onclick="renderPractice()">Change words</button>
+      <div id="px-err"></div>
+    </div>`;
+}
+function pxRetry(){
+  const m=px.results.filter(r=>r.status!=='good').map(r=>r.ex);
+  for(let i=m.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[m[i],m[j]]=[m[j],m[i]];}
+  pxStart(m);
+}
+
 // ── Home ──────────────────────────────────────────────────────
 function renderHome(){
   const due=words.filter(w=>isDue(w));
@@ -781,6 +1025,7 @@ function renderHome(){
       <button class="btn btn-primary btn-full review-cta" onclick="startReview()">
         Review ${due.length} word${due.length!==1?'s':''} due today ↗
       </button>`:''}
+    <button class="btn btn-full" style="padding:11px;font-size:14px" onclick="renderPractice()">✏️ Fill-in practice</button>
     <details class="add-word-details" id="memorized-section">
       <summary>🏆 Memorized words (${words.filter(w=>w.done).length})</summary>
       <div class="add-word-inner">
